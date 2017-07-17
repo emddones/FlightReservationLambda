@@ -2,8 +2,9 @@
  * Main file for lambda function
  */
 
-var logic = require('./helpers/lex-logic');
-var responseBuilder = require('./helpers/lex-response');
+
+
+var logic = require('./lex-business-logic');
 
 //object called by lex
 exports.handler = (event, context, callback) => {
@@ -19,41 +20,6 @@ function loggingCallback(response, originalCallback) {
     originalCallback(null, response);
 }
 
-function buildAirportOptions() {
-    return [
-        { text: 'American Airlines', value: 'AA' },
-        { text: 'Delta Airlines', value: 'DA' },
-        { text: 'Virgin America', value: 'VX' },
-    ];
-}
-
-function process1(intentRequest, callback, outputSessionAttributes) {
-    if (!intentRequest.currentIntent.slots.AirportFrom) {
-        callback(responseBuilder.elicitSlot(outputSessionAttributes, intentRequest.currentIntent.name,
-            intentRequest.currentIntent.slots, 'AirportFrom',
-            { contentType: 'PlainText', content: 'What Airport are you coming from?' },
-            responseBuilder.buildResponseCard('Please specify the airport you are coming from.', 'Airports near your origin',
-                buildAirportOptions())));
-        return true;
-    }
-}
-
-function processIntent(intentRequest, callback) {
-    const source = intentRequest.invocationSource;
-    var slots = intentRequest.currentIntent.slots;
-    const outputSessionAttributes = intentRequest.sessionAttributes || {};
-
-    if (source === 'DialogCodeHook') {
-        if (process1(intentRequest, callback, outputSessionAttributes)) {return};
-        callback('proccessing intent : ' + intentRequest.currentIntent.name);
-    }
-
-    callback(responseBuilder.close(outputSessionAttributes, 'Fulfilled', {
-        contentType: 'PlainText',
-        content: `Okay, I booked your trip from : ${slots.PlaceFrom}`
-    }));
-}
-
 function dispatch(intentRequest, originalCallback) {
     // console.log(JSON.stringify(intentRequest, null, 2));
     console.log(`dispatch userId=${intentRequest.userId}, intent=${intentRequest.currentIntent.name}`);
@@ -62,7 +28,7 @@ function dispatch(intentRequest, originalCallback) {
 
     // Dispatch to your skill's intent handlers
     if (name === 'FlightReservation') {
-        return processIntent(intentRequest, originalCallback);
+        return logic.processIntent(intentRequest, originalCallback);
     }
 
     throw new Error(`Intent with name ${name} not supported`);

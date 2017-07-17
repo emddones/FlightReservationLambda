@@ -14,9 +14,10 @@ var event = {
     "currentIntent": {
         "name": "FlightReservation",
         "slots": {
-            "WhereFrom": "Los Angeles"
+            placeholder : ""
+            , "WhereFrom": "Los Angeles"
             , "PlaceFrom": "LA"
-            // , "AirportFrom": "LAX"
+            , "AirportFrom": "LAX"
         },
         "confirmationStatus": "None",
     },
@@ -42,34 +43,53 @@ var event = {
 LEX(event, null, function (err, response) {
     LOG.log('------------------------------------------------------');
 
-    if (response.dialogAction.type === 'ElicitSlot') {
-        LOG.log(` ${response.dialogAction.type} : ${response.dialogAction.slotToElicit} `)
-    } else {
-        LOG.log(` ${response.dialogAction.type} `);
-    }
-    LOG.log('------------------------------------------------------');
-
-    if (err) {
-        LOG.log(` error : ${err}`);
-        LOG.log(` response : ${response}`);
-    } else {
-        LOG.log(` LEX Message: ${response.dialogAction.message.content} `)
-        if (response.dialogAction.responseCard) {
-            var genericAttachments = response.dialogAction.responseCard.genericAttachments
-            for (y = 0; y < genericAttachments.length; y++) {
-                var genericAttachment = response.dialogAction.responseCard.genericAttachments[y];
-                LOG.log('________________________________________________');
-                LOG.log(` | ${genericAttachment.title} `)
-                LOG.log(` | ${genericAttachment.subTitle} `)
-                var buttons = genericAttachment.buttons;
-                for (x = 0; x < buttons.length; x++) {
-                    var text = buttons[x].text;
-                    var value = buttons[x].value;
-                    LOG.log(` |  ${x + 1}) ${text} : ${value}`);
-                }
-            }
+    if (response.dialogAction) {
+        if (response.dialogAction.type === 'ElicitSlot') {
+            LOG.log(` ${response.dialogAction.type} : ${response.dialogAction.slotToElicit} `)
+        } else {
+            LOG.log(` ${response.dialogAction.type} `);
         }
         LOG.log('------------------------------------------------------');
+
+        if (err) {
+            LOG.log(` error : ${err}`);
+            LOG.log(` response : ${response}`);
+
+        } else {
+
+
+            if (response.dialogAction.message) {
+                LOG.log(` LEX Message: ${response.dialogAction.message.content} `)
+                if (response.dialogAction.responseCard) {
+                    var genericAttachments = response.dialogAction.responseCard.genericAttachments
+                    for (y = 0; y < genericAttachments.length; y++) {
+                        var genericAttachment = response.dialogAction.responseCard.genericAttachments[y];
+                        LOG.log('________________________________________________');
+                        LOG.log(` | ${genericAttachment.title} `)
+                        LOG.log(` | ${genericAttachment.subTitle} `)
+                        var buttons = genericAttachment.buttons;
+                        for (x = 0; x < buttons.length; x++) {
+                            var text = buttons[x].text;
+                            var value = buttons[x].value;
+                            LOG.log(` |  ${x + 1}) ${text} : ${value}`);
+                        }
+                    }
+                }
+            }
+            LOG.log('------------------------------------------------------');
+            LOG.log(' SLOTS:');
+            var slots = response.dialogAction.slots;
+            for (var key in slots) {
+                LOG.log(`   - ${key} : ${slots[key]}`);
+            }
+            LOG.log(' ATTRIBUTES:');
+            var sessionAttributes = response.sessionAttributes;
+            for (var key in sessionAttributes) {
+                LOG.log(`   - ${key} : ${sessionAttributes[key]}`);
+            }
+            LOG.log('------------------------------------------------------');
+            LOG.log(JSON.stringify(response));
+        }
     }
 })
 
