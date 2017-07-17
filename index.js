@@ -27,8 +27,8 @@ var event = {
     },
     "userId": "emddones",
     "inputTranscript": "Los Angeles",
-    "invocationSource": "DialogCodeHook",
-    // "invocationSource": "FulfillmentCodeHook",     
+    // "invocationSource": "DialogCodeHook",
+    "invocationSource": "FulfillmentCodeHook",     
     "outputDialogMode": "Text",
     "messageVersion": "1.0",
     "sessionAttributes": {
@@ -53,7 +53,7 @@ LEX(event, null, function (err, response) {
         LOG.log(` error : ${err}`);
         LOG.log(` response : ${response}`);
     } else {
-        LOG.log(` Question: ${response.dialogAction.message.content} `)
+        LOG.log(` LEX Message: ${response.dialogAction.message.content} `)
         if (response.dialogAction.responseCard) {
             var genericAttachments = response.dialogAction.responseCard.genericAttachments
             for (y = 0; y < genericAttachments.length; y++) {

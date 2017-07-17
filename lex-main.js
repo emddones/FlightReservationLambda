@@ -40,6 +40,7 @@ function process1(intentRequest, callback, outputSessionAttributes) {
 
 function processIntent(intentRequest, callback) {
     const source = intentRequest.invocationSource;
+    var slots = intentRequest.currentIntent.slots;
     const outputSessionAttributes = intentRequest.sessionAttributes || {};
 
     if (source === 'DialogCodeHook') {
@@ -49,7 +50,7 @@ function processIntent(intentRequest, callback) {
 
     callback(responseBuilder.close(outputSessionAttributes, 'Fulfilled', {
         contentType: 'PlainText',
-        content: 'Okay, I have booked your appointment.  We will see you at ${buildTimeOutputString(time)} on ${date}'
+        content: `Okay, I booked your trip from : ${slots.PlaceFrom}`
     }));
 }
 
@@ -82,8 +83,7 @@ module.exports = {
         validateBotName("DCS_FCSP");
 
 
-        // loggingCallback - intercepts callback to log first in console.
-        // dispatch(event, (response) => loggingCallback(response, callback), expectedIntent, processIntent);
+        // loggingCallback - intercepts callback to log first in console.        
         dispatch(event, (response) => loggingCallback(response, callback));
 
     }
