@@ -1,0 +1,14 @@
+{
+  "name": "dcs-lambda-bookflight",
+  "version": "1.0.0",
+  "description": "Lambda hook for the DCS Flight Booking ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.15.3"
+  }
+}
