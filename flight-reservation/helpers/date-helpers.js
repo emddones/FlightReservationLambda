@@ -17,7 +17,7 @@ module.exports = {
 
     isValidDate: function (date) {
         try {
-            return !(isNaN(parseLocalDate(date).getTime()));
+            return !(isNaN(this.parseLocalDate(date).getTime()));
         } catch (err) {
             return false;
         }
@@ -37,5 +37,7 @@ module.exports = {
         const minInt = Math.ceil(min);
         const maxInt = Math.floor(max);
         return Math.floor(Math.random() * (maxInt - minInt)) + minInt;
-    }
+    },
+
+    today: new Date()
 }

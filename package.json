@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.15.3"
+    "express": "^4.15.3",
+    "querystring": "^0.2.0",
+    "request": "^2.81.0"
   }
 }

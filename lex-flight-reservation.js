@@ -1,10 +1,7 @@
 /**
  * Main file for lambda function
  */
-
-
-
-var logic = require('./lex-business-logic');
+var logic = require('./flight-reservation/lex-business-logic');
 
 //object called by lex
 exports.handler = (event, context, callback) => {

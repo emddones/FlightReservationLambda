@@ -1,23 +1,31 @@
+
+NODE_TLS_REJECT_UNAUTHORIZED = 0;
 var express = require('express');
 var env = process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 var app = express();
 var router = express.Router();
 
-var util = require('./helpers/utilities');
-var lexmain = require('./lex-main');
+var util = require('./flight-reservation/helpers/utilities');
+var reservation = require('./lex-flight-reservation');
 
 var LOG = util.logger('index.js');
-var LEX = lexmain.handler;
+var reserve = reservation.handler;
 
+const FROM = 'Manila';
+const TO = 'US';
 
 var event = {
     "currentIntent": {
         "name": "FlightReservation",
         "slots": {
-            placeholder : ""
-            , "WhereFrom": "Los Angeles"
-            , "PlaceFrom": "LA"
-            , "AirportFrom": "LAX"
+            placeholder: ""
+            , From: FROM //Need to validate if its a valid place, if there are many result, let user select, If there is one, and !equalsIgnoreCase, Verify (Yes/No)
+            , To: TO //Need to validate if its a valid place, if there are many result, let user select, If there is one, and !equalsIgnoreCase, Verify (Yes/No)
+            , Departure: '2017-07-21'
+            , Return: '2017-07-23 ' //Validate return date is earlier than departure. If not valid date, ask again
+            // , FlightType: 'round trip' //(round trip, yes), (one way, no), if not valid, choose between types (delegate for now).
+            , DepartureFlightId: '123' //if not valid, ask to verify
+            , ReturnFlightId: '123' //if not valid, ask to verify
         },
         "confirmationStatus": "None",
     },
@@ -28,26 +36,36 @@ var event = {
     },
     "userId": "emddones",
     "inputTranscript": "Los Angeles",
-    // "invocationSource": "DialogCodeHook",
-    "invocationSource": "FulfillmentCodeHook",     
+    "invocationSource": "DialogCodeHook",
+    // "invocationSource": "FulfillmentCodeHook",     
     "outputDialogMode": "Text",
     "messageVersion": "1.0",
-    "sessionAttributes": {
-        "key1": "value1",
-        "key2": "value2"
-    }
+    "sessionAttributes": {}
 }
 
 // LOG.log('event: ' + JSON.stringify(event));
 
-LEX(event, null, function (err, response) {
+reserve(event, null, displayHandler)
+
+router.use('/api/test', (req, res) => {
+    res.status(200).send("success!" + generic.toQueryString({ "import": "successful" }));
+});
+
+app.use('/', router);
+
+app.listen(3030);
+LOG.level('SYSTEM').log('Listening on port ' + 3030 + '....');
+
+function displayHandler(err, response) {
     LOG.log('------------------------------------------------------');
 
     if (response.dialogAction) {
-        if (response.dialogAction.type === 'ElicitSlot') {
+        if (response.sessionAttributes.completedSlots){
+            LOG.log('Completed');
+        } else if (response.dialogAction.type === 'ElicitSlot') {
             LOG.log(` ${response.dialogAction.type} : ${response.dialogAction.slotToElicit} `)
         } else {
-            LOG.log(` ${response.dialogAction.type} `);
+            LOG.log(` ${response.dialogAction.type}`);
         }
         LOG.log('------------------------------------------------------');
 
@@ -61,7 +79,7 @@ LEX(event, null, function (err, response) {
             if (response.dialogAction.message) {
                 LOG.log(` LEX Message: ${response.dialogAction.message.content} `)
                 if (response.dialogAction.responseCard) {
-                    var genericAttachments = response.dialogAction.responseCard.genericAttachments
+                    var genericAttachments = response.dialogAction.responseCard.genericAttachments || []
                     for (y = 0; y < genericAttachments.length; y++) {
                         var genericAttachment = response.dialogAction.responseCard.genericAttachments[y];
                         LOG.log('________________________________________________');
@@ -91,14 +109,4 @@ LEX(event, null, function (err, response) {
             LOG.log(JSON.stringify(response));
         }
     }
-})
-
-router.use('/api/test', (req, res) => {
-    res.status(200).send("success!" + generic.toQueryString({ "import": "successful" }));
-});
-
-app.use('/', router);
-
-app.listen(3030);
-LOG.level('SYSTEM').log('Listening on port ' + 3030 + '....');
-
+}
