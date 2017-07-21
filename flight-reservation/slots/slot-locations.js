@@ -60,7 +60,7 @@ function verifyLocation(slotName, givenValue, intentRequest, callback, outputSes
         function (error, options) { //callback from buildLocationOptions
 
             if (error || options.length < 1) {
-                elicit(slotName, `I was not able to retrieve any location called ${givenValue}, Can you clarify, or give another name it's called?`, [], intentRequest, callback, outputSessionAttributes);
+                elicit(slotName, `I was not able to retrieve any location called ${givenValue}, Can you clarify, or give another name it's called?`, {}, intentRequest, callback, outputSessionAttributes);
                 actionPerformed = true;
                 return true;
             }
