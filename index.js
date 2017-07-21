@@ -11,20 +11,22 @@ var reservation = require('./lex-flight-reservation');
 var LOG = util.logger('index.js');
 var reserve = reservation.handler;
 
-var event = {
+var event = {}
+
+event = {
     "currentIntent": {
         "name": "FlightReservation",
         "slots": {
-            placeholder: ""
-            , From: 'Los Angeles' //Need to validate if its a valid place, if there are many result, let user select, If there is one, and !equalsIgnoreCase, Verify (Yes/No)
-            , To: 'New York' //Need to validate if its a valid place, if there are many result, let user select, If there is one, and !equalsIgnoreCase, Verify (Yes/No)
-            , Departure: '2017-09-05'
-            , Return: '2017-09-05 ' //Validate return date is earlier than departure. If not valid date, ask again
-            , FlightType: 'oneway' //(round trip, yes), (one way, no), if not valid, choose between types (delegate for now).
-            , DepartureFlightId: '123' //if not valid, ask to verify
-            , ReturnFlightId: '123' //if not valid, ask to verify
+            "placeholder": "",
+            "From": "Los Angeles",
+            "To": "New York",
+            "Departure": "2017-09-05",
+            "DepartureFlightId": "123",
+            "FlightType": "round trip",
+            "Return": "2017-09-05",
+            "ReturnFlightId": "123"
         },
-        "confirmationStatus": "None",
+        "confirmationStatus": "None"
     },
     "bot": {
         "name": "DCS_FCSP",
@@ -34,11 +36,13 @@ var event = {
     "userId": "emddones",
     "inputTranscript": "Los Angeles",
     "invocationSource": "DialogCodeHook",
-    // "invocationSource": "FulfillmentCodeHook",     
     "outputDialogMode": "Text",
     "messageVersion": "1.0",
-    "sessionAttributes": {From:'Los Angeles', To:'New York'}
-}
+    "sessionAttributes": {
+        "From": "Los Angeles",
+        "To": "New York"
+    }
+};
 
 // LOG.log('event: ' + JSON.stringify(event));
 
@@ -57,7 +61,7 @@ function displayHandler(err, response) {
     LOG.log('------------------------------------------------------');
 
     if (response.dialogAction) {
-        if (response.sessionAttributes.completedSlots){
+        if (response.sessionAttributes.completedSlots) {
             LOG.log('Completed');
         } else if (response.dialogAction.type === 'ElicitSlot') {
             LOG.log(` ${response.dialogAction.type} : ${response.dialogAction.slotToElicit} `)

@@ -1,9 +1,12 @@
 /**
  * Main file for lambda function
+ * 
+ * 
+ * 
  */
 var logic = require('./flight-reservation/lex-business-logic');
-
-//object called by lex
+var LIVE_DATA = true;
+//object called by AWS lambda
 exports.handler = (event, context, callback) => {
     try {
         module.exports.handler(event, context, callback);
@@ -25,6 +28,7 @@ function dispatch(intentRequest, originalCallback) {
 
     // Dispatch to your skill's intent handlers
     if (name === 'FlightReservation') {
+        intentRequest.sessionAttributes.LIVE_DATA = LIVE_DATA || false;
         return logic.processIntent(intentRequest, originalCallback);
     }
 

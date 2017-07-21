@@ -1,0 +1,55 @@
+----------------------------------------------------------------------------------------------------
+TODO:
+
+General:
+- place all configurations in main LAMBDA js. trace entire programs for needed configurations (e.g. rest endopint)
+- create translators between 3rd party API and simplified standalone model in the program.
+
+Flight Selection:
+- Use IATA API to retrieve real airline name
+- search for api to retrieve airline logo bi code(IATA)
+- Weather forecast for that day. if available.
+- simplify model to store on SessionAttribute.  We need to retrieve data once booking is finalized.
+
+Location:
+- Google Map for the place. Separate  
+- Resopsne attachment pre location
+
+Response Card Button
+- experiment on button.value/text, this might set facebook/slack postback or gotoURL behavior.
+
+----------------------------------------------------------------------------------------------------
+USER STORIES:
+
+- Registration Process in Chatbot
+    - Ask for basic information 
+    - submit Photo / ID to register
+    - Ask sensitive information in webpage (define what)
+
+- Remember - lex should store  slots, and session variables to db so that once time out, 
+    next time he books a flight it will ask if he wants to continue on the reservation 
+    (continue, continue later, cancel)
+
+- Auto Forward - Should there be any difficulties/errors, forward stored session to Customer Support Personnel	
+
+- Queue - Once timeout occurs on 3rd party API service during reservation, Lex should delegate to QUEUE, and give follow up reservation number to User.
+    e.g. Payment is confirmed, Lex to say: 
+        'I am trying to validate if we receive your payment. I will hangup for now, but you can follow up anytime by telling me this ref# 123123'
+
+- Fullfillment - should also store and return reservation ID to user.
+
+- Add "cancel"  command to bot.  
+    anytime the word "cancel" is submitted, bot will ask if user wants to cancel. 
+    "You said cancel, do you want to cancel, or you are telling me your response to my last question is cancel?"
+    If no, then proceed to accept value (e.g. name="Cancel"?)
+
+- Validations : 
+		in case utterance captured values, but some are missing
+		in case a supplied answer is invalid, need to confirm based on the slot
+			Sorry, but I can't find the flight booking record with number : {bookingId}
+
+- Store {outputVariables}.initiated = 1
+    IF initiated!=1 then 
+        IF required slots not fulfilled : "Hi, hello there, I need to ask some more questions regarding your request,"
+        IF there are validations error : "Hi, hello there, I need to clarify and ask some things"
+

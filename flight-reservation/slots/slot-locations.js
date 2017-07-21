@@ -89,7 +89,7 @@ function verifyLocation(slotName, givenValue, intentRequest, callback, outputSes
                 actionPerformed = true;
                 return true;
             }
-        })
+        }, outputSessionAttributes)
 
     return true;
 }
@@ -109,7 +109,11 @@ function elicit(slotToElicit, message, responseCards, intentRequest, callback, o
     callback(response);
 }
 
-function populateLocationOptions(givenLocation, callback) {
+function populateLocationOptions(givenLocation, callback, outputSessionAttributes) {
+    var retrieveOperation = 'retrievePlacesMock';
+    if (outputSessionAttributes.LIVE_DATA) {
+        retrieveOperation = 'retrievePlaces';
+    }
     flightsApi.retrievePlaces({ term: givenLocation, v: 3 }, function (error, data) {
         if (error) {
             callback(error, null);
@@ -120,7 +124,7 @@ function populateLocationOptions(givenLocation, callback) {
         var limit = 7;
         for (var x = 0; x < data.length && options.length < limit; x++) {
             var place = data[x];
-            var option = { "text": `${place.value} - ${place.id}`, "value": place.value };
+            var option = { "text": `${place.value}`, "value": place.value };
 
             if (!lastOption.value || option.value != lastOption.value) {
                 console.log(`...I am ignoring ${option.value}, already have it in the list of options.`)
@@ -134,10 +138,4 @@ function populateLocationOptions(givenLocation, callback) {
 
         callback(null, options);
     });
-
-    // callback(null, [
-    //     { text: 'LAX - Los Angeles', value: 'Los Angeles' },
-    //     { text: 'LX - Las Vegas', value: 'Las Vegas' },
-    //     { text: 'DC', value: 'DC' }
-    // ]);
 }

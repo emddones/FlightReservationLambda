@@ -17,6 +17,14 @@ module.exports = {
         LOG.log("END");
     },
 
+    retrievePlacesMock: function (givenLocation, callback) {
+        callback(null, [
+            { id: 'LAX - Los Angeles', value: 'Los Angeles' },
+            { id: 'LX - Las Vegas', value: 'Las Vegas' },
+            { id: 'DC', value: 'DC' }
+        ]);
+    },
+
     retrieveFlights: function (params, callback) {
         LOG.log("BEGIN");
         var getUrl = { url: "https://api.skypicker.com/flights" };
@@ -80,9 +88,9 @@ function prepareDate(dateToFormat) {
     return `${padLeft('00', dateToFormat.getDate())}/${padLeft('00', dateToFormat.getMonth() + 1)}/${'00', dateToFormat.getFullYear()}`;
 }
 
-function padLeft(leading, num) {    
+function padLeft(leading, num) {
     var expectedLen = leading.length;
-    return (leading + num).substr(expectedLen*-1, expectedLen)
+    return (leading + num).substr(expectedLen * -1, expectedLen)
 }
 
 var responseDataStruct = { //simplified response sample to map.

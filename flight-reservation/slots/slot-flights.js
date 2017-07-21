@@ -22,7 +22,8 @@ function process(intentRequest, callback, outputSessionAttributes) {
 
     //check if round trip, then ask for the return flight
     var FlightType = intentRequest.currentIntent.slots.FlightType;
-    if (!FlightType || FlightType == 'yes' || FlightType == 'round') {
+    var ReturnFlightId = intentRequest.currentIntent.slots.ReturnFlightId;
+    if (!ReturnFlightId && (FlightType == 'yes' || FlightType == 'round trip')) {
 
         if (ASK_FLIGHT('ReturnFlightId', 'Please select your return flight.',
             intentRequest, callback, outputSessionAttributes))
@@ -68,9 +69,12 @@ function processFlight(slotName, message, intentRequest, callback, outputSession
 var populateFlightCard = function (slotName, intentRequest, callback, outputSessionAttributes) {
     // console.log(`intentRequest ${JSON.stringify(intentRequest)}`);
     var params = flightsApi.constructParameterFrom(slotName, intentRequest, outputSessionAttributes);
-
+    var retrieveOperation = 'retrieveFlightsMock';
+    if (outputSessionAttributes.LIVE_DATA) {
+        retrieveOperation = 'retrieveFlights';
+    }
     // flightsApi.retrieveFlightsMock(params, function (error, response) { //Mock Data
-    flightsApi.retrieveFlights(params, function (error, response) { //Live Data
+    flightsApi[retrieveOperation](params, function (error, response) { //Live Data
         console.log(`RESPONSE: ${response}`)
         //prepare response card if there is data from repsponse [see definition of JSON response in api code]
         if (response.data) {
@@ -85,9 +89,9 @@ var populateFlightCard = function (slotName, intentRequest, callback, outputSess
                 var arrivalDate = Dates.parseFromUTC(firstDeparture.dTimeUTC);
 
                 var genericAttachment = {
-                    "title": `<strong>${firstDeparture.airline}${firstDeparture.flight_no}</strong> for ${flight.price} ${response.currency} <br/> ${flight.fly_duration}`,
-                    "subTitle": `${firstDeparture.cityFrom} (${firstDeparture.flyFrom}) ${Dates.toISODate(departureDate)}`
-                    + ` \n to ${firstDeparture.cityTo} (${firstDeparture.flyTo}) ${Dates.toISODate(arrivalDate)}`,
+                    "title": `Flight number: ${firstDeparture.airline}${firstDeparture.flight_no} for (${flight.price} ${response.currency}) duration: ${flight.fly_duration}`,
+                    "subTitle": `Departure: ${firstDeparture.cityFrom} (${firstDeparture.flyFrom}) ${Dates.toISODate(departureDate)}`
+                    + ` \n Arrival: ${firstDeparture.cityTo} (${firstDeparture.flyTo}) ${Dates.toISODate(arrivalDate)}`,
                     "imageUrl": `https://d2rhekw5qr4gcj.cloudfront.net/uploads/things/images/29304388_140406_0202_29.gif`,
                     "attachmentLinkUrl": flight.deep_link,
                     buttons: [{ "text": `choose`, "value": flight.id }],

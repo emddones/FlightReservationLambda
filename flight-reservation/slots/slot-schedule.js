@@ -7,6 +7,7 @@
  * 
  * Validation Rule: 
  * Validate return date is earlier than departure. If not valid date, ask again
+ * @TODO - check if round trip before asking return schedule.
  * 
  */
 var responseBuilder = require('../helpers/lex-response');
@@ -19,19 +20,18 @@ module.exports = {
 function process(intentRequest, callback, outputSessionAttributes) {
     console.log('processsing slot-schedule logic');
     var slots = intentRequest.currentIntent.slots;
-    if (ASK_EITHER_DATE_IS_EMPTY(intentRequest, callback, outputSessionAttributes)) { return true }
+    if (ASK_IF_RETURN_TRIP_NEEDED(intentRequest, callback, outputSessionAttributes)) { return true }
     if (CLARIFY_IF_THERE_ARE_INVALID_DATES(intentRequest, callback, outputSessionAttributes)) { return true }
     return false;
 }
 
 
 //just delegate to LEX
-function ASK_EITHER_DATE_IS_EMPTY(intentRequest, callback, outputSessionAttributes) {
-    var bothSupplied = intentRequest.currentIntent.slots.Departure && intentRequest.currentIntent.slots.Return;
-    if (!bothSupplied) {
-        callback(
-            responseBuilder.delegate(outputSessionAttributes, intentRequest.currentIntent.slots)
-        );
+function ASK_IF_RETURN_TRIP_NEEDED(intentRequest, callback, outputSessionAttributes) {
+    // var bothSupplied = intentRequest.currentIntent.slots.Departure && intentRequest.currentIntent.slots.Return;
+    if ((intentRequest.currentIntent.slots.FlightType == 'round trip'
+        || intentRequest.currentIntent.slots.FlightType == 'yes') && !intentRequest.currentIntent.slots.Return) {
+        elicit('Return', `When will you return from the trip?`, intentRequest, callback, outputSessionAttributes)
         return true;
     }
 }
@@ -46,28 +46,31 @@ function CLARIFY_IF_THERE_ARE_INVALID_DATES(intentRequest, callback, outputSessi
         return true;
     }
 
-    if (!dateHelper.isValidDate(Return)) {
-        elicit('Return', `Sorry but your return date is invalid, could you repeat it please?`, intentRequest, callback, outputSessionAttributes)
-        return true;
-    }
+    if (intentRequest.currentIntent.slots.FlightType == 'round trip'
+        || intentRequest.currentIntent.slots.FlightType == 'yes') {
 
-    var dateOfReturn = dateHelper.parseLocalDate(Return);
-    var dateOfDeparture = dateHelper.parseLocalDate(Departure);
+        if (!dateHelper.isValidDate(Return)) {
+            elicit('Return', `Sorry but your return date is invalid, could you repeat it please?`, intentRequest, callback, outputSessionAttributes)
+            return true;
+        }
 
+        var dateOfReturn = dateHelper.parseLocalDate(Return);
+        var dateOfDeparture = dateHelper.parseLocalDate(Departure);
 
-    if (dateOfDeparture < dateHelper.today) {
-        elicit('Departure', `Your departure date should be later than today. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
-        return true;
-    }
+        if (dateOfDeparture < dateHelper.today) {
+            elicit('Departure', `Your departure date should be later than today. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
+            return true;
+        }
 
-    if (dateOfReturn < dateHelper.today) {
-        elicit('Return', `Your return date should be later than today. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
-        return true;
-    }
+        if (dateOfReturn < dateHelper.today) {
+            elicit('Return', `Your return date should be later than today. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
+            return true;
+        }
 
-    if (dateOfReturn < dateOfDeparture) {
-        elicit('Return', `Your return date should be later than your first departure, ${dateHelper.toISODate(dateOfDeparture)}. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
-        return true;
+        if (dateOfReturn < dateOfDeparture) {
+            elicit('Return', `Your return date should be later than your first departure, ${dateHelper.toISODate(dateOfDeparture)}. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
+            return true;
+        }
     }
 
     return false;
