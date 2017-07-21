@@ -6,73 +6,96 @@
  * 
  */
 var flightsApi = require('../datasources/skypicker');
-var responseBuilder = require('./helpers/lex-response');
+var responseBuilder = require('../helpers/lex-response');
+var Dates = require('../helpers/date-helpers');
 
-module.exports = {    
-    "process": process    
+module.exports = {
+    "process": process
 }
 
 //default proecssor
-var process = function(intentRequest, callback, outputSessionAttributes){
-    if(intentRequest.currentIntent.slots.DepartureFlightId && ReturnFlightId){
+function process(intentRequest, callback, outputSessionAttributes) {
+    console.log('processsing slot-location logic');
+    if (ASK_FLIGHT('DepartureFlightId', 'Please select your origin flight',
+        intentRequest, callback, outputSessionAttributes))
+    { return true }
+
+    //check if round trip, then ask for the return flight
+    var FlightType = intentRequest.currentIntent.slots.FlightType;
+    if (!FlightType || FlightType == 'yes' || FlightType == 'round') {
+
+        if (ASK_FLIGHT('ReturnFlightId', 'Please select your return flight.',
+            intentRequest, callback, outputSessionAttributes))
+        { return true }
 
     }
+    //TODO: store selected flight info in outputSessionAttributes simplify structure for lambda-memory-storage optimization   
 }
 
-var isValid = function(DepartureFlightId, ReturnFlightId) {
+function ASK_FLIGHT(slotName, message, intentRequest, callback, outputSessionAttributes) {
+    console.log(`...is "${slotName}" already given?... ${intentRequest.currentIntent.slots[slotName]}`);
+    if (!intentRequest.currentIntent.slots[slotName]) {
+        console.log(`...Well, "${slotName}" is empty. I need to ask.`);
+        processFlight(slotName, message, intentRequest, callback, outputSessionAttributes);
+        return true;
+    }
+    return false;
+}
+
+function isValid(DepartureFlightId, ReturnFlightId) {
     return true;
 }
 
-var processFlight = function (intentRequest, callback, outputSessionAttributes) {
-    // if (!intentRequest.currentIntent.slots.Flight) {
-        var PlaceFrom = intentRequest.currentIntent.slots.PlaceFrom;
-        populateFlightOptions(PlaceFrom, function (options) {
-            var responseCard = responseBuilder.buildResponseCard('Please select flight schedule below:',
-                'Matches found: ',
-                options);
+function processFlight(slotName, message, intentRequest, callback, outputSessionAttributes) {
+    populateFlightCard(slotName, intentRequest, function (err, card) {
+        var response = responseBuilder.elicitSlot(
+            outputSessionAttributes,
+            intentRequest.currentIntent.name,
+            intentRequest.currentIntent.slots,
+            slotName,
+            {
+                contentType: 'PlainText',
+                content: message
+            },
+            card);
+        callback(response);
+    }, outputSessionAttributes);
+    return true;
 
-            var response = responseBuilder.elicitSlot(
-                outputSessionAttributes,
-                intentRequest.currentIntent.name,
-                intentRequest.currentIntent.slots,
-                'Flight',
-                {
-                    contentType: 'PlainText',
-                    content: 'Please select a flight from the selection'
-                },
-                responseCard);
-            callback(response);
-        });
-        return true;
-    // }
 }
 
 
-var populateFlightOptions = function (PlaceFrom, PlaceTo, callback) {
+var populateFlightCard = function (slotName, intentRequest, callback, outputSessionAttributes) {
+    // console.log(`intentRequest ${JSON.stringify(intentRequest)}`);
+    var params = flightsApi.constructParameterFrom(slotName, intentRequest, outputSessionAttributes);
 
-    var params = {
-        "flyFrom": PlaceFrom,
-        "to": 'Los Angeles',
-        "dateFrom": '08/08/2017',
-        "dateTo": '08/08/2017',
-        "directFlights": 1,
-        "partner": 'picky',
-        "partner_market": 'us',
-        "limit": '2'
-    };
+    // flightsApi.retrieveFlightsMock(params, function (error, response) { //Mock Data
+    flightsApi.retrieveFlights(params, function (error, response) { //Live Data
+        console.log(`RESPONSE: ${response}`)
+        //prepare response card if there is data from repsponse [see definition of JSON response in api code]
+        if (response.data) {
+            var flights = response.data;
+            var card = { contentType: 'application/vnd.amazonaws.card.generic', version: 1, genericAttachments: [] };
+            card.genericAttachments = [];
 
-    flightsApi.retrieveFlights(params, function (error, data) {
-        var options = [];
-        var flights;
-        if (data.data) {
-            flights = data.data;
             for (var x = 0; x < flights.length && x < 10; x++) {
                 var flight = flights[x];
-                var option = { "text": `${flight.route[0].cityFrom} - ${flight.route[0].cityTo}`, "value": flight.route[0].cityFrom };
-                options.push(option);
+                var firstDeparture = flight.route[0];
+                var departureDate = Dates.parseFromUTC(firstDeparture.dTimeUTC);
+                var arrivalDate = Dates.parseFromUTC(firstDeparture.dTimeUTC);
+
+                var genericAttachment = {
+                    "title": `<strong>${firstDeparture.airline}${firstDeparture.flight_no}</strong> for ${flight.price} ${response.currency} <br/> ${flight.fly_duration}`,
+                    "subTitle": `${firstDeparture.cityFrom} (${firstDeparture.flyFrom}) ${Dates.toISODate(departureDate)}`
+                    + ` \n to ${firstDeparture.cityTo} (${firstDeparture.flyTo}) ${Dates.toISODate(arrivalDate)}`,
+                    "imageUrl": `https://d2rhekw5qr4gcj.cloudfront.net/uploads/things/images/29304388_140406_0202_29.gif`,
+                    "attachmentLinkUrl": flight.deep_link,
+                    buttons: [{ "text": `choose`, "value": flight.id }],
+                }
+                card.genericAttachments.push(genericAttachment);
             }
         }
 
-        callback(options);
+        callback(error, card);
     })
 }

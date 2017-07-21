@@ -1,6 +1,6 @@
 'use strict';
 var util = require('../helpers/utilities');
-
+var Dates = require('../helpers/date-helpers');
 var LOG = util.logger('places.js');
 module.exports = {
 
@@ -22,7 +22,7 @@ module.exports = {
         var getUrl = { url: "https://api.skypicker.com/flights" };
 
         util.get(getUrl, params,
-            function (error, data) {                
+            function (error, data) {
                 callback(error, data);
             }
         );
@@ -30,12 +30,85 @@ module.exports = {
         LOG.log("END");
     },
 
-    retrieveFlightsMock: function(params, callback){
+    retrieveFlightsMock: function (params, callback) {
         LOG.log("BEGIN")
         callback(null, flightsMockData)
         LOG.log("END")
+    },
+
+    constructParameterFrom: function (slotName, intentRequest, outputSessionAttributes) {
+
+        // console.log(`intentRequest ${JSON.stringify(intentRequest)}`);
+        var slots = intentRequest.currentIntent.slots;
+
+        var origin;
+        var destination;
+        var targetDeparture = new Date();;
+
+        if (slotName == 'DepartureFlightId') {
+            origin = slots.From;
+            destination = slots.To;
+            targetDeparture = Dates.parseLocalDate(slots.Departure);
+        } else {
+            origin = slots.To;
+            destination = slots.From;
+            targetDeparture = Dates.parseLocalDate(slots.Departure);
+        }
+
+        // var paramTargetDepartureDate = `${targetDeparture.getDate()}/${targetDeparture.getMonth() + 1}/${targetDeparture.getFullYear()}`;
+        return {
+            flyFrom: origin //'Los Angeles' //[From]
+            , to: destination //'New York' //[To]
+            // Restricts that all retrieved flights are in the same day of the slot.
+            , dateFrom: prepareDate(targetDeparture) //'11/08/2017' // [Departure] *format dd/mm/yyyy //Specific if rountrip searching is implemented
+            , dateTo: prepareDate(targetDeparture)  //'11/08/2017' // [Departure] *format dd/mm/yyyy            
+            , typeFlight: 'oneway' //(oneway, round)  //round returns 2 routes, the first departure, and return routes.
+            , directFlights: 1 //specify dierct flights only
+            , flyDaysType: 'departure' //For now departure only
+            , returnFlyDays: '[0,1,2,,3,4,5,6]'
+            , returnFlyDaysType: 'departure'
+            , partner: 'picky'
+            , partner_market: 'us'
+            , limit: '5'
+            , curr: 'USD'
+            , sort: 'price'
+        }
     }
 }
+
+function prepareDate(dateToFormat) {
+    return `${padLeft('00', dateToFormat.getDate())}/${padLeft('00', dateToFormat.getMonth() + 1)}/${'00', dateToFormat.getFullYear()}`;
+}
+
+function padLeft(leading, num) {    
+    var expectedLen = leading.length;
+    return (leading + num).substr(expectedLen*-1, expectedLen)
+}
+
+var responseDataStruct = { //simplified response sample to map.
+    "currency": "USD",
+    "_results": 3,
+    data: [{
+        "id": "329138348|330940913",
+        "deep_link": "https://www.kiwi.com/deep?from=LAX&to=JFK&departure=15-08-2017&return=19-09-2017&flightsId=329138348%7C330940913&price=351&passengers=1&affilid=picky&lang=en&currency=USD&booking_token=1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/J6A9UrZESdJSHUitxqyqzDkR2o9Hv99rUDnsjbe97KzC718Rncc/e49OE50HYe/DPxEFRerM6opJrRFt16h+k5nYKEv96yPaSTTWbsN/XaosJsM5aczKNznh4IibSBbrUuAkUcSwFYwS/tLqwqFn9HvJqgK5VhOmFciv3TBr1kIo2YiznNhQl/MucF37GlRvfbU17ckYu6C8kF4r2Tw2SMAQEsDCxmK4nAk19dKHvJf7EM8qCX76n+fD3d5xDOcwN2zyzNZ9fInwO4F5ym6nUvqsPEZ+ghHdtZ0XSyacGlVlPuwOv6u9/CRKbo5aosis2meR5eunD9U82LK4dTntYXUlbd8OXZHdDZvyWuJNqPgjJoWKexiWhtamIJt+fVQIKknSrzIzqR8Q9dLsMXaKGW372FMjwXvkGyaBRRxZvrofaoFd/Bfp6pmIshkTlKtftGTdgtnudjOJ3GOTSKWoWg=",
+        "return_duration": "6h 0m",
+        "fly_duration": "5h 25m",
+        "price": 407,
+        "flyTo": "JFK",
+        "flyFrom": "LAX",
+        route: [{//0 = departure, 1 = return
+            "id": "329138348",
+            "flight_no": 24,
+            "flyFrom": "LAX",
+            "flyTo": "JFK",
+            "cityTo": "New York City",
+            "cityFrom": "Los Angeles",
+            "dTimeUTC": 1502802000,
+            "aTimeUTC": 1502821500,
+            "airline": "B6"
+        }]
+    }]
+};
 
 var flightsMockData = {
     "search_params": {
@@ -48,190 +121,367 @@ var flightsMockData = {
             "children": 0
         }
     },
-    "_results": 2,
+    "_results": 3,
     "connections": [],
-    "currency": "EUR",
-    "currency_rate": 1,
+    "currency": "USD",
+    "currency_rate": 0.86371,
     "all_stopover_airports": [],
     "data": [
         {
             "mapIdfrom": "los-angeles",
             "refr": false,
             "duration": {
-                "total": 52200,
-                "return": 0,
-                "departure": 52200
+                "total": 41100,
+                "return": 21600,
+                "departure": 19500
             },
-            "flyTo": "MNL",
+            "return_duration": "6h 0m",
+            "flyTo": "JFK",
             "conversion": {
-                "EUR": 501
+                "USD": 407,
+                "EUR": 351
             },
-            "deep_link": "https://www.kiwi.com/deep?from=LAX&to=MNL&departure=29-08-2017&flightsId=EU1498130691_336236382&price=501&passengers=1&affilid=picky&lang=en&currency=EUR&booking_token=1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/JlrX3U3AoCx3di0VrdbALBpiVzt9bISEAuRBLuzSrpTWt7KZQMknybQBviOsr4E09wYoNpDXi6bQQRSPGHehW56eT/je/b/bPjM3G9pwRs7IXFn1xEcYtawWYYh3vRrM4toNB0yNP/j2wMFP64ZhytnWnneLeOzGOY0nq+1RhjugLbDAaQoU1ssDLkrgUD3JQ05Zo7ctqZB0espkfFy9Q59brB1JC9OClgjqKwE46C7u4qj8iZbhuGEcfbcsI4D6MShmtDh26BK8+8ubpOcwZO4JF0rrDU7MICp1fKu0X5jr+lr98wd5fmf7lfVgG6MmDDUSbGglYpiVYSOd9a7Q+2/PBW13NouX0Jaud+mJMcIqnikI2DakmhZ2KWzOTtytg2WdxMF0g+bYuJoKT9k0R5Q/AhSiFd764UTyLnXaIuVc4tXi39Fu9hk7e0p2dYyJEP2lDDdGkqHon+XSoljvkY=",
-            "mapIdto": "manila",
-            "nightsInDest": null,
+            "deep_link": "https://www.kiwi.com/deep?from=LAX&to=JFK&departure=15-08-2017&return=19-09-2017&flightsId=329138348%7C330940913&price=351&passengers=1&affilid=picky&lang=en&currency=USD&booking_token=1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/J6A9UrZESdJSHUitxqyqzDkR2o9Hv99rUDnsjbe97KzC718Rncc/e49OE50HYe/DPxEFRerM6opJrRFt16h+k5nYKEv96yPaSTTWbsN/XaosJsM5aczKNznh4IibSBbrUuAkUcSwFYwS/tLqwqFn9HvJqgK5VhOmFciv3TBr1kIo2YiznNhQl/MucF37GlRvfbU17ckYu6C8kF4r2Tw2SMAQEsDCxmK4nAk19dKHvJf7EM8qCX76n+fD3d5xDOcwN2zyzNZ9fInwO4F5ym6nUvqsPEZ+ghHdtZ0XSyacGlVlPuwOv6u9/CRKbo5aosis2meR5eunD9U82LK4dTntYXUlbd8OXZHdDZvyWuJNqPgjJoWKexiWhtamIJt+fVQIKknSrzIzqR8Q9dLsMXaKGW372FMjwXvkGyaBRRxZvrofaoFd/Bfp6pmIshkTlKtftGTdgtnudjOJ3GOTSKWoWg=",
+            "mapIdto": "new-york",
+            "nightsInDest": 35,
             "airlines": [
-                "PR"
+                "B6",
+                "DL"
             ],
-            "id": "EU1498130691_336236382",
-            "facilitated_booking_available": true,
-            "pnr_count": 1,
-            "fly_duration": "14h 30m",
+            "id": "329138348|330940913",
+            "facilitated_booking_available": false,
+            "pnr_count": 2,
+            "fly_duration": "5h 25m",
             "countryTo": {
-                "code": "PH",
-                "name": "Philippines"
+                "code": "US",
+                "name": "United States"
             },
             "baglimit": {
-                "hand_width": 40,
+                "hand_width": 35,
                 "hand_length": 55,
-                "hold_weight": 10,
-                "hand_height": 20,
+                "hold_weight": 20,
+                "hand_height": 22,
                 "hand_weight": 7
             },
-            "aTimeUTC": 1504125000,
+            "aTimeUTC": 1502821500,
             "p3": 1,
-            "price": 501,
+            "price": 407,
             "type_flights": [
-                "GDS-r"
+                "lcc"
             ],
             "bags_price": {
-                "1": 0
+                "1": 44
             },
-            "cityTo": "Manila",
+            "cityTo": "New York City",
             "transfers": [],
             "flyFrom": "LAX",
-            "dTimeUTC": 1504072800,
+            "dTimeUTC": 1502802000,
             "p2": 1,
             "countryFrom": {
                 "code": "US",
                 "name": "United States"
             },
             "p1": 1,
-            "dTime": 1504047600,
-            "booking_token": "1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/JlrX3U3AoCx3di0VrdbALBpiVzt9bISEAuRBLuzSrpTWt7KZQMknybQBviOsr4E09wYoNpDXi6bQQRSPGHehW56eT/je/b/bPjM3G9pwRs7IXFn1xEcYtawWYYh3vRrM4toNB0yNP/j2wMFP64ZhytnWnneLeOzGOY0nq+1RhjugLbDAaQoU1ssDLkrgUD3JQ05Zo7ctqZB0espkfFy9Q59brB1JC9OClgjqKwE46C7u4qj8iZbhuGEcfbcsI4D6MShmtDh26BK8+8ubpOcwZO4JF0rrDU7MICp1fKu0X5jr+lr98wd5fmf7lfVgG6MmDDUSbGglYpiVYSOd9a7Q+2/PBW13NouX0Jaud+mJMcIqnikI2DakmhZ2KWzOTtytg2WdxMF0g+bYuJoKT9k0R5Q/AhSiFd764UTyLnXaIuVc4tXi39Fu9hk7e0p2dYyJEP2lDDdGkqHon+XSoljvkY=",
+            "dTime": 1502776800,
+            "booking_token": "1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/J6A9UrZESdJSHUitxqyqzDkR2o9Hv99rUDnsjbe97KzC718Rncc/e49OE50HYe/DPxEFRerM6opJrRFt16h+k5nYKEv96yPaSTTWbsN/XaosJsM5aczKNznh4IibSBbrUuAkUcSwFYwS/tLqwqFn9HvJqgK5VhOmFciv3TBr1kIo2YiznNhQl/MucF37GlRvfbU17ckYu6C8kF4r2Tw2SMAQEsDCxmK4nAk19dKHvJf7EM8qCX76n+fD3d5xDOcwN2zyzNZ9fInwO4F5ym6nUvqsPEZ+ghHdtZ0XSyacGlVlPuwOv6u9/CRKbo5aosis2meR5eunD9U82LK4dTntYXUlbd8OXZHdDZvyWuJNqPgjJoWKexiWhtamIJt+fVQIKknSrzIzqR8Q9dLsMXaKGW372FMjwXvkGyaBRRxZvrofaoFd/Bfp6pmIshkTlKtftGTdgtnudjOJ3GOTSKWoWg=",
             "cityFrom": "Los Angeles",
-            "aTime": 1504153800,
+            "aTime": 1502807100,
             "route": [
                 {
                     "bags_recheck_required": false,
                     "mapIdfrom": "los-angeles",
-                    "flight_no": 103,
+                    "flight_no": 24,
                     "original_return": 0,
                     "lngFrom": -118.223533630371,
-                    "flyTo": "MNL",
-                    "latTo": 14.6042,
-                    "source": "GDS-r",
-                    "combination_id": "EU1498130691",
-                    "id": "EU1498130691_336236382",
+                    "flyTo": "JFK",
+                    "latTo": 40.7052700759286,
+                    "source": null,
+                    "combination_id": "329138348",
+                    "id": "329138348",
                     "latFrom": 34.0699824882441,
-                    "lngTo": 120.982,
-                    "dTimeUTC": 1504072800,
-                    "aTimeUTC": 1504125000,
+                    "lngTo": -74.0135622024537,
+                    "dTimeUTC": 1502802000,
+                    "aTimeUTC": 1502821500,
                     "return": 0,
                     "price": 1,
-                    "cityTo": "Manila",
+                    "cityTo": "New York City",
                     "flyFrom": "LAX",
-                    "mapIdto": "manila",
-                    "dTime": 1504047600,
+                    "mapIdto": "new-york",
+                    "dTime": 1502776800,
                     "found_on": null,
-                    "airline": "PR",
+                    "airline": "B6",
                     "cityFrom": "Los Angeles",
-                    "aTime": 1504153800
+                    "aTime": 1502807100
+                },
+                {
+                    "bags_recheck_required": false,
+                    "mapIdfrom": "new-york",
+                    "flight_no": 428,
+                    "original_return": 1,
+                    "lngFrom": -74.0135622024537,
+                    "flyTo": "LAX",
+                    "latTo": 34.0699824882441,
+                    "source": null,
+                    "combination_id": "330940913",
+                    "id": "330940913",
+                    "latFrom": 40.7052700759286,
+                    "lngTo": -118.223533630371,
+                    "dTimeUTC": 1505828700,
+                    "aTimeUTC": 1505850300,
+                    "return": 1,
+                    "price": 1,
+                    "cityTo": "Los Angeles",
+                    "flyFrom": "JFK",
+                    "mapIdto": "los-angeles",
+                    "dTime": 1505814300,
+                    "found_on": null,
+                    "airline": "DL",
+                    "cityFrom": "New York City",
+                    "aTime": 1505825100
                 }
             ],
-            "distance": 11756.49
+            "distance": 3936.98
         },
         {
             "mapIdfrom": "los-angeles",
             "refr": false,
             "duration": {
-                "total": 52200,
-                "return": 0,
-                "departure": 52200
+                "total": 41100,
+                "return": 21600,
+                "departure": 19500
             },
-            "flyTo": "MNL",
+            "return_duration": "6h 0m",
+            "flyTo": "JFK",
             "conversion": {
-                "EUR": 501
+                "USD": 407,
+                "EUR": 351
             },
-            "deep_link": "https://www.kiwi.com/deep?from=LAX&to=MNL&departure=23-08-2017&flightsId=DD3312511819_499400415&price=501&passengers=1&affilid=picky&lang=en&currency=EUR&booking_token=1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/JlrX3U3AoCx3di0VrdbALBWBcYzkIcn0ris+zYi4UKQGOiQ3RmJ5ZWE/tz61lojhBsKJL7FDsvTHnSUv1T6+GmF8LgKs44+RawnLaB/GaAb3NVcVRvNW3JrMmUqA4ibIPZUoSHHaaG6jY2pAfEpj5XMK1EHSU1Z9PeChVforF4iO0wGBMsetwklnGaIV8li+YJvR6wEZHUkOp5ab3XELcWJ5Yaa7Hq7rVmsHH5gMgLKFz0jWdItJa26foAeYKfcgGTrf/PjLwTiuYbp5eK9Zn5BluWapZojcxs4La6RM5Eq9WLm/86HQA+nlRbv2w9+pmOqV9dwQ+WvuGHC1+4DHwKcCeRjtpBmDEKuagpHKwvKAvrqOFhVGG8qDzAj14J27tCWGZhNyh7xET9WyjYhsLzs2DeiAwcg4rVQbQeQjdxmK6wvMb1WxqzmZG7ei/RUM8Ogb4Dhih5+mSirroJxegE=",
-            "mapIdto": "manila",
-            "nightsInDest": null,
+            "deep_link": "https://www.kiwi.com/deep?from=LAX&to=JFK&departure=15-08-2017&return=19-09-2017&flightsId=329138348%7C330940912&price=351&passengers=1&affilid=picky&lang=en&currency=USD&booking_token=1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/J6A9UrZESdJSHUitxqyqzB+N9kIzNrGabbZFh5gCKlg717iMFHrCmln5SAH4JND9yrd+MeeAjuwku3tj+fGu+DQXRpnN7Sw/J6dakuP8lXI3yYMIQdDAnCjynTIyQh1+wFESkiMfGK+geZrh0Z627Y6Qu43cZsJ10A893oWLbc2A/vlqD3CrdJ6IEIuTFsQfGGnwBWYdn++YmpcShIVRpitnGdXoaBI0glzXDacezR7gG7midQENJCYe3LxSs25t1cI5YHNSdMGcJbDQkXzMla1OJ7x3qOL+aBpTxk+vQCmE38F3zrOAwthlmDYc+3IgUbcH9WhBYYY+7ULsaFVuGbprIdHkVEcGDNthMJRiZlKsDpdhLnHMgz0tUO+UwCVzA289AE4WogEggyY+xz79skgZnDWGUjLm7TKDxZsLLWVcie3cgfWxqeoWwMTL+v36SEzVcN0BejWK+0qie1B8qE=",
+            "mapIdto": "new-york",
+            "nightsInDest": 35,
             "airlines": [
-                "PR"
+                "B6",
+                "DL"
             ],
-            "id": "DD3312511819_499400415",
-            "facilitated_booking_available": true,
-            "pnr_count": 1,
-            "fly_duration": "14h 30m",
+            "id": "329138348|330940912",
+            "facilitated_booking_available": false,
+            "pnr_count": 2,
+            "fly_duration": "5h 25m",
             "countryTo": {
-                "code": "PH",
-                "name": "Philippines"
+                "code": "US",
+                "name": "United States"
             },
             "baglimit": {
-                "hand_width": 40,
+                "hand_width": 35,
                 "hand_length": 55,
-                "hold_weight": 10,
-                "hand_height": 20,
+                "hold_weight": 20,
+                "hand_height": 22,
                 "hand_weight": 7
             },
-            "aTimeUTC": 1503606600,
+            "aTimeUTC": 1502821500,
             "p3": 1,
-            "price": 501,
+            "price": 407,
             "type_flights": [
-                "GDS-r"
+                "lcc"
             ],
             "bags_price": {
-                "1": 0
+                "1": 44
             },
-            "cityTo": "Manila",
+            "cityTo": "New York City",
             "transfers": [],
             "flyFrom": "LAX",
-            "dTimeUTC": 1503554400,
+            "dTimeUTC": 1502802000,
             "p2": 1,
             "countryFrom": {
                 "code": "US",
                 "name": "United States"
             },
             "p1": 1,
-            "dTime": 1503529200,
-            "booking_token": "1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/JlrX3U3AoCx3di0VrdbALBWBcYzkIcn0ris+zYi4UKQGOiQ3RmJ5ZWE/tz61lojhBsKJL7FDsvTHnSUv1T6+GmF8LgKs44+RawnLaB/GaAb3NVcVRvNW3JrMmUqA4ibIPZUoSHHaaG6jY2pAfEpj5XMK1EHSU1Z9PeChVforF4iO0wGBMsetwklnGaIV8li+YJvR6wEZHUkOp5ab3XELcWJ5Yaa7Hq7rVmsHH5gMgLKFz0jWdItJa26foAeYKfcgGTrf/PjLwTiuYbp5eK9Zn5BluWapZojcxs4La6RM5Eq9WLm/86HQA+nlRbv2w9+pmOqV9dwQ+WvuGHC1+4DHwKcCeRjtpBmDEKuagpHKwvKAvrqOFhVGG8qDzAj14J27tCWGZhNyh7xET9WyjYhsLzs2DeiAwcg4rVQbQeQjdxmK6wvMb1WxqzmZG7ei/RUM8Ogb4Dhih5+mSirroJxegE=",
+            "dTime": 1502776800,
+            "booking_token": "1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/J6A9UrZESdJSHUitxqyqzB+N9kIzNrGabbZFh5gCKlg717iMFHrCmln5SAH4JND9yrd+MeeAjuwku3tj+fGu+DQXRpnN7Sw/J6dakuP8lXI3yYMIQdDAnCjynTIyQh1+wFESkiMfGK+geZrh0Z627Y6Qu43cZsJ10A893oWLbc2A/vlqD3CrdJ6IEIuTFsQfGGnwBWYdn++YmpcShIVRpitnGdXoaBI0glzXDacezR7gG7midQENJCYe3LxSs25t1cI5YHNSdMGcJbDQkXzMla1OJ7x3qOL+aBpTxk+vQCmE38F3zrOAwthlmDYc+3IgUbcH9WhBYYY+7ULsaFVuGbprIdHkVEcGDNthMJRiZlKsDpdhLnHMgz0tUO+UwCVzA289AE4WogEggyY+xz79skgZnDWGUjLm7TKDxZsLLWVcie3cgfWxqeoWwMTL+v36SEzVcN0BejWK+0qie1B8qE=",
             "cityFrom": "Los Angeles",
-            "aTime": 1503635400,
+            "aTime": 1502807100,
             "route": [
                 {
                     "bags_recheck_required": false,
                     "mapIdfrom": "los-angeles",
-                    "flight_no": 103,
+                    "flight_no": 24,
                     "original_return": 0,
                     "lngFrom": -118.223533630371,
-                    "flyTo": "MNL",
-                    "latTo": 14.6042,
-                    "source": "GDS-r",
-                    "combination_id": "DD3312511819",
-                    "id": "DD3312511819_499400415",
+                    "flyTo": "JFK",
+                    "latTo": 40.7052700759286,
+                    "source": null,
+                    "combination_id": "329138348",
+                    "id": "329138348",
                     "latFrom": 34.0699824882441,
-                    "lngTo": 120.982,
-                    "dTimeUTC": 1503554400,
-                    "aTimeUTC": 1503606600,
+                    "lngTo": -74.0135622024537,
+                    "dTimeUTC": 1502802000,
+                    "aTimeUTC": 1502821500,
                     "return": 0,
                     "price": 1,
-                    "cityTo": "Manila",
+                    "cityTo": "New York City",
                     "flyFrom": "LAX",
-                    "mapIdto": "manila",
-                    "dTime": 1503529200,
+                    "mapIdto": "new-york",
+                    "dTime": 1502776800,
                     "found_on": null,
-                    "airline": "PR",
+                    "airline": "B6",
                     "cityFrom": "Los Angeles",
-                    "aTime": 1503635400
+                    "aTime": 1502807100
+                },
+                {
+                    "bags_recheck_required": false,
+                    "mapIdfrom": "new-york",
+                    "flight_no": 423,
+                    "original_return": 1,
+                    "lngFrom": -74.0135622024537,
+                    "flyTo": "LAX",
+                    "latTo": 34.0699824882441,
+                    "source": null,
+                    "combination_id": "330940912",
+                    "id": "330940912",
+                    "latFrom": 40.7052700759286,
+                    "lngTo": -118.223533630371,
+                    "dTimeUTC": 1505836800,
+                    "aTimeUTC": 1505858400,
+                    "return": 1,
+                    "price": 1,
+                    "cityTo": "Los Angeles",
+                    "flyFrom": "JFK",
+                    "mapIdto": "los-angeles",
+                    "dTime": 1505822400,
+                    "found_on": null,
+                    "airline": "DL",
+                    "cityFrom": "New York City",
+                    "aTime": 1505833200
                 }
             ],
-            "distance": 11756.49
+            "distance": 3936.98
+        },
+        {
+            "mapIdfrom": "los-angeles",
+            "refr": false,
+            "duration": {
+                "total": 41400,
+                "return": 21900,
+                "departure": 19500
+            },
+            "return_duration": "6h 5m",
+            "flyTo": "JFK",
+            "conversion": {
+                "USD": 407,
+                "EUR": 351
+            },
+            "deep_link": "https://www.kiwi.com/deep?from=LAX&to=JFK&departure=15-08-2017&return=19-09-2017&flightsId=329138348%7C330940911&price=351&passengers=1&affilid=picky&lang=en&currency=USD&booking_token=1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/J6A9UrZESdJSHUitxqyqzAgt9LTEHtwwdXcqKbnHhvy8zc4cd4Ar44WwSh65W/o74ZGXHt9lmgrbaG4gVEoB2UM58q055RDHYVrtoINZQH1n7bLGHPmC3WEOgALm/eSqiL9Oc+QkdJBjQg75VuPEyAFtERAc57PU0a+TRHLtRdup2kJ6OG70kLfYbdWPwDqtiOe0i0q0ydOfWMaAxc1lTdaQGWpTNqJzqKwYUPOte8pgz6QOMKSMFxkezRft3y+xRufpOaAejM2xDP0LpLdbv3FbqhSoCdI+iyiaVgVJ54tdIjvmkN8cIrVz74IG2QPTBCJMKfnqRMS6bap0FIGZxaZB4PLRcR4ei0GWuKoD0+ece8O48Zwdt9k44QhA85TkqmD/e8wbW2xY19p76xmueGSk1nZ2AgbbQIlCY2B35+ioLkW2MH3klVQYCs0UDd/p/RTP1mqgHkcMsx/ccR7ucY=",
+            "mapIdto": "new-york",
+            "nightsInDest": 35,
+            "airlines": [
+                "B6",
+                "DL"
+            ],
+            "id": "329138348|330940911",
+            "facilitated_booking_available": false,
+            "pnr_count": 2,
+            "fly_duration": "5h 25m",
+            "countryTo": {
+                "code": "US",
+                "name": "United States"
+            },
+            "baglimit": {
+                "hand_width": 35,
+                "hand_length": 55,
+                "hold_weight": 20,
+                "hand_height": 22,
+                "hand_weight": 7
+            },
+            "aTimeUTC": 1502821500,
+            "p3": 1,
+            "price": 407,
+            "type_flights": [
+                "lcc"
+            ],
+            "bags_price": {
+                "1": 44
+            },
+            "cityTo": "New York City",
+            "transfers": [],
+            "flyFrom": "LAX",
+            "dTimeUTC": 1502802000,
+            "p2": 1,
+            "countryFrom": {
+                "code": "US",
+                "name": "United States"
+            },
+            "p1": 1,
+            "dTime": 1502776800,
+            "booking_token": "1jxlYxkde2GyMabEvaGo7iaK1KZ7vAp0GyLPK1O56NJ5ph4eWn5jUAgXHofQYcwLirzDzbwYxVmymxriDzQD/J6A9UrZESdJSHUitxqyqzAgt9LTEHtwwdXcqKbnHhvy8zc4cd4Ar44WwSh65W/o74ZGXHt9lmgrbaG4gVEoB2UM58q055RDHYVrtoINZQH1n7bLGHPmC3WEOgALm/eSqiL9Oc+QkdJBjQg75VuPEyAFtERAc57PU0a+TRHLtRdup2kJ6OG70kLfYbdWPwDqtiOe0i0q0ydOfWMaAxc1lTdaQGWpTNqJzqKwYUPOte8pgz6QOMKSMFxkezRft3y+xRufpOaAejM2xDP0LpLdbv3FbqhSoCdI+iyiaVgVJ54tdIjvmkN8cIrVz74IG2QPTBCJMKfnqRMS6bap0FIGZxaZB4PLRcR4ei0GWuKoD0+ece8O48Zwdt9k44QhA85TkqmD/e8wbW2xY19p76xmueGSk1nZ2AgbbQIlCY2B35+ioLkW2MH3klVQYCs0UDd/p/RTP1mqgHkcMsx/ccR7ucY=",
+            "cityFrom": "Los Angeles",
+            "aTime": 1502807100,
+            "route": [
+                {
+                    "bags_recheck_required": false,
+                    "mapIdfrom": "los-angeles",
+                    "flight_no": 24,
+                    "original_return": 0,
+                    "lngFrom": -118.223533630371,
+                    "flyTo": "JFK",
+                    "latTo": 40.7052700759286,
+                    "source": null,
+                    "combination_id": "329138348",
+                    "id": "329138348",
+                    "latFrom": 34.0699824882441,
+                    "lngTo": -74.0135622024537,
+                    "dTimeUTC": 1502802000,
+                    "aTimeUTC": 1502821500,
+                    "return": 0,
+                    "price": 1,
+                    "cityTo": "New York City",
+                    "flyFrom": "LAX",
+                    "mapIdto": "new-york",
+                    "dTime": 1502776800,
+                    "found_on": null,
+                    "airline": "B6",
+                    "cityFrom": "Los Angeles",
+                    "aTime": 1502807100
+                },
+                {
+                    "bags_recheck_required": false,
+                    "mapIdfrom": "new-york",
+                    "flight_no": 424,
+                    "original_return": 1,
+                    "lngFrom": -74.0135622024537,
+                    "flyTo": "LAX",
+                    "latTo": 34.0699824882441,
+                    "source": null,
+                    "combination_id": "330940911",
+                    "id": "330940911",
+                    "latFrom": 40.7052700759286,
+                    "lngTo": -118.223533630371,
+                    "dTimeUTC": 1505818800,
+                    "aTimeUTC": 1505840700,
+                    "return": 1,
+                    "price": 1,
+                    "cityTo": "Los Angeles",
+                    "flyFrom": "JFK",
+                    "mapIdto": "los-angeles",
+                    "dTime": 1505804400,
+                    "found_on": null,
+                    "airline": "DL",
+                    "cityFrom": "New York City",
+                    "aTime": 1505815500
+                }
+            ],
+            "distance": 3936.98
         }
     ],
     "ref_tasks": {},
     "refresh": [],
     "del": null,
     "all_airlines": [
-        "PR"
+        "AA",
+        "VX",
+        "DL",
+        "B6",
+        "AS"
     ],
     "time": 1
 }

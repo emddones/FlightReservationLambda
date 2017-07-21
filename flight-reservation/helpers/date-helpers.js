@@ -15,6 +15,12 @@ module.exports = {
         return new Date(dateComponents[0], dateComponents[1] - 1, dateComponents[2]);
     },
 
+    parseFromUTC: function (utcString) {
+        var d = new Date(0); // The 0 there is the key, which sets the date to the epoch
+        d.setUTCSeconds(utcString);
+        return d;
+    },
+
     isValidDate: function (date) {
         try {
             return !(isNaN(this.parseLocalDate(date).getTime()));
@@ -39,5 +45,9 @@ module.exports = {
         return Math.floor(Math.random() * (maxInt - minInt)) + minInt;
     },
 
-    today: new Date()
+    today: new Date(),
+
+    toISODate: function (dateToFormat) {
+        return `${dateToFormat.getFullYear()}-${dateToFormat.getMonth() + 1}-${dateToFormat.getDate()}`;
+    },
 }

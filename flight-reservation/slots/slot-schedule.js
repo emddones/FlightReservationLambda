@@ -17,8 +17,8 @@ module.exports = {
 }
 
 function process(intentRequest, callback, outputSessionAttributes) {
+    console.log('processsing slot-schedule logic');
     var slots = intentRequest.currentIntent.slots;
-
     if (ASK_EITHER_DATE_IS_EMPTY(intentRequest, callback, outputSessionAttributes)) { return true }
     if (CLARIFY_IF_THERE_ARE_INVALID_DATES(intentRequest, callback, outputSessionAttributes)) { return true }
     return false;
@@ -66,7 +66,7 @@ function CLARIFY_IF_THERE_ARE_INVALID_DATES(intentRequest, callback, outputSessi
     }
 
     if (dateOfReturn < dateOfDeparture) {
-        elicit('Return', `Your return date should be later than your first departure, ${dateOfDeparture.toLocaleDateString()}. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
+        elicit('Return', `Your return date should be later than your first departure, ${dateHelper.toISODate(dateOfDeparture)}. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
         return true;
     }
 

@@ -34,11 +34,11 @@ module.exports = {
         LOG('generic.js').log('Request URL : ' + requestUrl);
         request.get(requestUrl,
             function (error, response, body) {
-                if (!error && response.statusCode == 200) {
+                // LOG('generic.js').log(`Data response: ${body}`);
+                if (!error && response.statusCode == 200) {                    
                     callback(error, JSON.parse(body));
-                } else {
-                    LOG('generic.js').log(`Data response: ${JSON.stringify(error.message)}`)
-                    callback(error, { errormessage: error.message });
+                } else {                    
+                    callback(error, { errormessage: body });
                 }
             }
         );           

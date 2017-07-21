@@ -11,19 +11,16 @@ var reservation = require('./lex-flight-reservation');
 var LOG = util.logger('index.js');
 var reserve = reservation.handler;
 
-const FROM = 'Manila';
-const TO = 'US';
-
 var event = {
     "currentIntent": {
         "name": "FlightReservation",
         "slots": {
             placeholder: ""
-            , From: FROM //Need to validate if its a valid place, if there are many result, let user select, If there is one, and !equalsIgnoreCase, Verify (Yes/No)
-            , To: TO //Need to validate if its a valid place, if there are many result, let user select, If there is one, and !equalsIgnoreCase, Verify (Yes/No)
-            , Departure: '2017-07-21'
-            , Return: '2017-07-23 ' //Validate return date is earlier than departure. If not valid date, ask again
-            // , FlightType: 'round trip' //(round trip, yes), (one way, no), if not valid, choose between types (delegate for now).
+            , From: 'Los Angeles' //Need to validate if its a valid place, if there are many result, let user select, If there is one, and !equalsIgnoreCase, Verify (Yes/No)
+            , To: 'New York' //Need to validate if its a valid place, if there are many result, let user select, If there is one, and !equalsIgnoreCase, Verify (Yes/No)
+            , Departure: '2017-09-05'
+            , Return: '2017-09-05 ' //Validate return date is earlier than departure. If not valid date, ask again
+            , FlightType: 'oneway' //(round trip, yes), (one way, no), if not valid, choose between types (delegate for now).
             , DepartureFlightId: '123' //if not valid, ask to verify
             , ReturnFlightId: '123' //if not valid, ask to verify
         },
@@ -40,7 +37,7 @@ var event = {
     // "invocationSource": "FulfillmentCodeHook",     
     "outputDialogMode": "Text",
     "messageVersion": "1.0",
-    "sessionAttributes": {}
+    "sessionAttributes": {From:'Los Angeles', To:'New York'}
 }
 
 // LOG.log('event: ' + JSON.stringify(event));
@@ -106,7 +103,7 @@ function displayHandler(err, response) {
                 LOG.log(`   - ${key} : ${sessionAttributes[key]}`);
             }
             LOG.log('------------------------------------------------------');
-            LOG.log(JSON.stringify(response));
+            // LOG.log(JSON.stringify(response));
         }
     }
 }
