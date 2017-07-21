@@ -18,10 +18,10 @@ event = {
         "name": "FlightReservation",
         "slots": {
             "placeholder": "",
-            "From": "Los Angeles",
-            "To": "New York",
+            "From": "Manila",
+            "To": "Las Vegas",
             "Departure": "2017-09-05",
-            "DepartureFlightId": "123",
+            // "DepartureFlightId": "123",
             "FlightType": "round trip",
             "Return": "2017-09-05",
             "ReturnFlightId": "123"
@@ -39,8 +39,8 @@ event = {
     "outputDialogMode": "Text",
     "messageVersion": "1.0",
     "sessionAttributes": {
-        "From": "Los Angeles",
-        "To": "New York"
+        "From": "Manila",
+        "To": "Las Vegas"
     }
 };
 

@@ -42,7 +42,7 @@ function CLARIFY_IF_THERE_ARE_INVALID_DATES(intentRequest, callback, outputSessi
     var Return = intentRequest.currentIntent.slots.Return;
 
     if (!dateHelper.isValidDate(Departure)) {
-        elicit('Departure', `Sorry but your departure date is invalid, can you repeat it please?`, intentRequest, callback, outputSessionAttributes)
+        elicit('Departure', `Sorry but your departure date is invalid, can you repeat it please?`, intentRequest, callback, outputSessionAttributes);
         return true;
     }
 
@@ -50,7 +50,7 @@ function CLARIFY_IF_THERE_ARE_INVALID_DATES(intentRequest, callback, outputSessi
         || intentRequest.currentIntent.slots.FlightType == 'yes') {
 
         if (!dateHelper.isValidDate(Return)) {
-            elicit('Return', `Sorry but your return date is invalid, could you repeat it please?`, intentRequest, callback, outputSessionAttributes)
+            elicit('Return', `Sorry but your return date is invalid, could you repeat it please?`, intentRequest, callback, outputSessionAttributes);
             return true;
         }
 
@@ -58,17 +58,17 @@ function CLARIFY_IF_THERE_ARE_INVALID_DATES(intentRequest, callback, outputSessi
         var dateOfDeparture = dateHelper.parseLocalDate(Departure);
 
         if (dateOfDeparture < dateHelper.today) {
-            elicit('Departure', `Your departure date should be later than today. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
+            elicit('Departure', `Your departure date should be later than today. Could you please clarify?`, intentRequest, callback, outputSessionAttributes);
             return true;
         }
 
         if (dateOfReturn < dateHelper.today) {
-            elicit('Return', `Your return date should be later than today. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
+            elicit('Return', `Your return date should be later than today. Could you please clarify?`, intentRequest, callback, outputSessionAttributes);
             return true;
         }
 
         if (dateOfReturn < dateOfDeparture) {
-            elicit('Return', `Your return date should be later than your first departure, ${dateHelper.toISODate(dateOfDeparture)}. Could you please clarify?`, intentRequest, callback, outputSessionAttributes)
+            elicit('Return', `Your return date should be later than your first departure, ${dateHelper.toISODate(dateOfDeparture)}. Could you please clarify?`, intentRequest, callback, outputSessionAttributes);
             return true;
         }
     }

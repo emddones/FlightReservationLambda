@@ -49,17 +49,34 @@ function isValid(DepartureFlightId, ReturnFlightId) {
 
 function processFlight(slotName, message, intentRequest, callback, outputSessionAttributes) {
     populateFlightCard(slotName, intentRequest, function (err, card) {
-        var response = responseBuilder.elicitSlot(
-            outputSessionAttributes,
-            intentRequest.currentIntent.name,
-            intentRequest.currentIntent.slots,
-            slotName,
-            {
-                contentType: 'PlainText',
-                content: message
-            },
-            card);
-        callback(response);
+
+        if (!card.genericAttachments[0]) {
+
+            var notFoundMessage = `Sorry but i dont see any flights from ${intentRequest.currentIntent.slots.From} to ${intentRequest.currentIntent.slots.To}. Plesae verify where yuo are coming from?`;
+            intentRequest.currentIntent.slots.From = null;
+            intentRequest.currentIntent.slots.To = null;
+            intentRequest.currentIntent.slots.DepartureFlightId = null;
+            intentRequest.currentIntent.slots.ReturnFlightId = null;
+            outputSessionAttributes.From = null;
+            outputSessionAttributes.To = null;
+            elicit('To', notFoundMessage,
+                intentRequest, callback, outputSessionAttributes);
+
+        } else {
+
+            var response = responseBuilder.elicitSlot(
+                outputSessionAttributes,
+                intentRequest.currentIntent.name,
+                intentRequest.currentIntent.slots,
+                slotName,
+                {
+                    contentType: 'PlainText',
+                    content: message
+                },
+                card);
+            callback(response);
+        }
+
     }, outputSessionAttributes);
     return true;
 
@@ -76,30 +93,47 @@ var populateFlightCard = function (slotName, intentRequest, callback, outputSess
     // flightsApi.retrieveFlightsMock(params, function (error, response) { //Mock Data
     flightsApi[retrieveOperation](params, function (error, response) { //Live Data
         console.log(`RESPONSE: ${response}`)
+        console.log(JSON.stringify(response));
+
         //prepare response card if there is data from repsponse [see definition of JSON response in api code]
-        if (response.data) {
-            var flights = response.data;
-            var card = { contentType: 'application/vnd.amazonaws.card.generic', version: 1, genericAttachments: [] };
-            card.genericAttachments = [];
 
-            for (var x = 0; x < flights.length && x < 10; x++) {
-                var flight = flights[x];
-                var firstDeparture = flight.route[0];
-                var departureDate = Dates.parseFromUTC(firstDeparture.dTimeUTC);
-                var arrivalDate = Dates.parseFromUTC(firstDeparture.dTimeUTC);
 
-                var genericAttachment = {
-                    "title": `Flight number: ${firstDeparture.airline}${firstDeparture.flight_no} for (${flight.price} ${response.currency}) duration: ${flight.fly_duration}`,
-                    "subTitle": `Departure: ${firstDeparture.cityFrom} (${firstDeparture.flyFrom}) ${Dates.toISODate(departureDate)}`
-                    + ` \n Arrival: ${firstDeparture.cityTo} (${firstDeparture.flyTo}) ${Dates.toISODate(arrivalDate)}`,
-                    "imageUrl": `https://d2rhekw5qr4gcj.cloudfront.net/uploads/things/images/29304388_140406_0202_29.gif`,
-                    "attachmentLinkUrl": flight.deep_link,
-                    buttons: [{ "text": `choose`, "value": flight.id }],
-                }
-                card.genericAttachments.push(genericAttachment);
+        var flights = response.data;
+        var card = { contentType: 'application/vnd.amazonaws.card.generic', version: 1, genericAttachments: [] };
+        card.genericAttachments = [];
+
+        for (var x = 0; x < flights.length && x < 10; x++) {
+            var flight = flights[x];
+            var firstDeparture = flight.route[0];
+            var departureDate = Dates.parseFromUTC(firstDeparture.dTimeUTC);
+            var arrivalDate = Dates.parseFromUTC(firstDeparture.dTimeUTC);
+
+            var genericAttachment = {
+                "title": `Flight number: ${firstDeparture.airline}${firstDeparture.flight_no} for (${flight.price} ${response.currency}) duration: ${flight.fly_duration}`,
+                "subTitle": `Departure: ${firstDeparture.cityFrom} (${firstDeparture.flyFrom}) ${Dates.toISODate(departureDate)}`
+                + ` \n Arrival: ${firstDeparture.cityTo} (${firstDeparture.flyTo}) ${Dates.toISODate(arrivalDate)}`,
+                "imageUrl": `https://d2rhekw5qr4gcj.cloudfront.net/uploads/things/images/29304388_140406_0202_29.gif`,
+                "attachmentLinkUrl": flight.deep_link,
+                buttons: [{ "text": `choose`, "value": flight.id }],
             }
+            card.genericAttachments.push(genericAttachment);
         }
 
         callback(error, card);
+
     })
+}
+
+function elicit(slotToElicit, message, intentRequest, callback, outputSessionAttributes) {
+    var response = responseBuilder.elicitSlot(
+        outputSessionAttributes,
+        intentRequest.currentIntent.name,
+        intentRequest.currentIntent.slots,
+        slotToElicit,
+        {
+            contentType: 'PlainText',
+            content: message
+        },
+        []);
+    callback(response);
 }
