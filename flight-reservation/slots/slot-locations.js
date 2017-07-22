@@ -80,6 +80,7 @@ function verifyLocation(slotName, givenValue, intentRequest, callback, outputSes
                 }
 
                 if (places[0].title != givenValue && places.length == 1) {
+                    console.log(card);
                     console.log(`...I found only one match and I need to verify if "${givenValue}" also means "${places[0].title}"?`);
                     elicit(slotName, `Do you mean "${places[0].title}"?`,
                         card,
@@ -153,15 +154,19 @@ function generateResponseCard(responseData) {
         if (location.type == 2) {
             var genericAttachment = {
                 "title": `${location.value}`,
-                "subTitle": ``,
+                "subTitle": `${location.lat} | ${location.lng}`,
                 "imageUrl": generateMapImage(location.value, location.lat, location.lng),
-                "attachmentLinkUrl": location.deep_link,
-                buttons: [{ "text": `choose`, "value": location.value }],
+                "attachmentLinkUrl": generateUrlLink(location.lat, location.lng),
+                "buttons": [{ "text": `choose`, "value": location.value }],
             }
             card.genericAttachments.push(genericAttachment);
         }
     }
     return card;
+}
+
+function generateUrlLink(lat, lng) {
+    return `https://www.google.com/maps/@${lat},${lng},15z?hl=en`;
 }
 
 function generateMapImage(value, lat, lng) {

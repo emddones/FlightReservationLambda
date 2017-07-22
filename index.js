@@ -18,7 +18,7 @@ event = {
         "name": "FlightReservation",
         "slots": {
             "placeholder": "",
-            "From": "Manila",
+            "From": "Los Ange",
             "To": "Manila",
             "Departure": "2017-09-05",
             // "DepartureFlightId": "123",
