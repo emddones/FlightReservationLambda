@@ -90,7 +90,7 @@ function verifyLocation(slotName, givenValue, intentRequest, callback, outputSes
                 }
 
                 console.log(`...I found ${places.length} possible matches for "${givenValue}".`);
-                elicit(slotName, `Can you please verify? I know some places like "${places[0].value}", and "${places[1].value}", can you be more specific please?`,
+                elicit(slotName, `Can you please verify? I know some places like "${places[0].title}", and "${places[1].title}", can you be more specific please?`,
                     card,
                     intentRequest, callback, outputSessionAttributes);
                 actionPerformed = true;
