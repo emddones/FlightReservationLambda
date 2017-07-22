@@ -18,6 +18,7 @@
  */
 var flightsApi = require('../datasources/skypicker');
 var responseBuilder = require('../helpers/lex-response');
+var utilities = require('../helpers/utilities');
 
 module.exports = {
     "process": process
@@ -56,35 +57,40 @@ function VERIFY_IF_LOCATION_IS_VAGUE(slotName, intentRequest, callback, outputSe
 function verifyLocation(slotName, givenValue, intentRequest, callback, outputSessionAttributes) {
     var actionPerformed = false;
 
-    populateLocationOptions(givenValue,
-        function (error, options) { //callback from buildLocationOptions
+    populateLocationResponseCard(givenValue,
+        function (error, card) { //callback from buildLocationOptions
+            // console.log(`received generated card: ${JSON.stringify(card)}`);
 
-            if (error || options.length < 1) {
-                elicit(slotName, `I was not able to retrieve any location called ${givenValue}, Can you clarify, or give another name it's called?`, {}, intentRequest, callback, outputSessionAttributes);
+            if (error || !card || !card.genericAttachments || card.genericAttachments.length < 1) {
+                elicit(slotName, `I was not able to retrieve any location called ${givenValue}, Can you clarify, or give another name it's called?`,
+                    null, intentRequest,
+                    callback, outputSessionAttributes);
                 actionPerformed = true;
                 return true;
             }
 
-            if (options.length > 0) {
-                if (options[0].value == givenValue) {
+            var places = card.genericAttachments;
+
+            if (places.length > 0) {
+                if (places[0].title == givenValue) {
                     console.log(`...I found a perfect match for the location "${givenValue}"?, I will let LEX ask fo the remaining things`);
                     outputSessionAttributes[slotName] = givenValue;
                     callback(responseBuilder.delegate(outputSessionAttributes, intentRequest.currentIntent.slots));
                     return true;
                 }
 
-                if (options[0].value != givenValue && options.length == 1) {
-                    console.log(`...I found only one match and I need to verify if "${givenValue}" also means "${options[0].value}"?`);
-                    elicit(slotName, `Do you mean "${options[0].value}"?`,
-                        responseBuilder.buildResponseCard('Please select from places below:', 'Matches found: ', options),
+                if (places[0].title != givenValue && places.length == 1) {
+                    console.log(`...I found only one match and I need to verify if "${givenValue}" also means "${places[0].title}"?`);
+                    elicit(slotName, `Do you mean "${places[0].title}"?`,
+                        card,
                         intentRequest, callback, outputSessionAttributes);
                     actionPerformed = true;
                     return true;
                 }
 
-                console.log(`...I found ${options.length} possible matches for "${givenValue}".`);
-                elicit(slotName, `Can you please verify? I know some places like "${options[0].value}", and "${options[1].value}", can you be more specific please?`,
-                    responseBuilder.buildResponseCard('Please select from places below:', 'Matches found: ', options),
+                console.log(`...I found ${places.length} possible matches for "${givenValue}".`);
+                elicit(slotName, `Can you please verify? I know some places like "${places[0].value}", and "${places[1].value}", can you be more specific please?`,
+                    card,
                     intentRequest, callback, outputSessionAttributes);
                 actionPerformed = true;
                 return true;
@@ -94,7 +100,7 @@ function verifyLocation(slotName, givenValue, intentRequest, callback, outputSes
     return true;
 }
 
-function elicit(slotToElicit, message, responseCards, intentRequest, callback, outputSessionAttributes) {
+function elicit(slotToElicit, message, responseCard, intentRequest, callback, outputSessionAttributes) {
     var response = responseBuilder.elicitSlot(
         outputSessionAttributes,
         intentRequest.currentIntent.name,
@@ -104,38 +110,71 @@ function elicit(slotToElicit, message, responseCards, intentRequest, callback, o
             contentType: 'PlainText',
             content: message
         },
-        responseCards);
+        responseCard);
 
     callback(response);
 }
 
-function populateLocationOptions(givenLocation, callback, outputSessionAttributes) {
+function populateLocationResponseCard(givenLocation, callback, outputSessionAttributes) {
     var retrieveOperation = 'retrievePlacesMock';
     if (outputSessionAttributes.LIVE_DATA) {
         retrieveOperation = 'retrievePlaces';
     }
-    flightsApi.retrievePlaces({ term: givenLocation, v: 3 }, function (error, data) {
-        if (error) {
-            callback(error, null);
+
+    flightsApi[retrieveOperation]({ term: givenLocation, v: 3 }, function (error, responseData) {
+
+        var card = generateResponseCard(responseData);
+
+        if (error || !card) {
+            // console.log('ERROR ' + error + ' ' + card);
+            callback(error || `No location found`, null);
+        } else {
+            // console.log('Returning location card: ' + card);
+            callback(null, card);
         }
 
-        var options = [];
-        var lastOption = {};
-        var limit = 7;
-        for (var x = 0; x < data.length && options.length < limit; x++) {
-            var place = data[x];
-            var option = { "text": `${place.value}`, "value": place.value };
-
-            if (!lastOption.value || option.value != lastOption.value) {
-                console.log(`...I am ignoring ${option.value}, already have it in the list of options.`)
-                options.push(option);
-            } else {
-                limit++;
-            }
-
-            lastOption = option;
-        }
-
-        callback(null, options);
     });
 }
+
+function generateResponseCard(responseData) {
+
+    var card = { contentType: 'application/vnd.amazonaws.card.generic', version: 1, genericAttachments: [] };
+    var locations = responseData;
+
+    if (!responseData || !locations || locations.length < 1 || !locations[0].value) {
+        return null;
+    }
+
+    card.genericAttachments = [];
+
+    const limit = 5;
+    for (var x = 0; x < locations.length && x < limit; x++) {
+        var location = locations[x];
+        if (location.type == 2) {
+            var genericAttachment = {
+                "title": `${location.value}`,
+                "subTitle": ``,
+                "imageUrl": generateMapImage(location.value, location.lat, location.lng),
+                "attachmentLinkUrl": location.deep_link,
+                buttons: [{ "text": `choose`, "value": location.value }],
+            }
+            card.genericAttachments.push(genericAttachment);
+        }
+    }
+    return card;
+}
+
+function generateMapImage(value, lat, lng) {
+    var url = 'https://maps.googleapis.com/maps/api/staticmap?'
+    var params = {
+        zoom: 12
+        // , center: value
+        , size: `600x300`
+        , maptype: `roadmap`
+        , format: `jpg`
+        , markers: `color:red|label:A|${lat},${lng}`
+    };
+
+    return url + utilities.toQueryString(params);
+}
+

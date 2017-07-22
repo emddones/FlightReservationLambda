@@ -85,7 +85,7 @@ function elicit(slotToElicit, message, intentRequest, callback, outputSessionAtt
         {
             contentType: 'PlainText',
             content: message
-        },
-        []);
+        }, null
+    );
     callback(response);
 }

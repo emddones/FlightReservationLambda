@@ -19,7 +19,7 @@ event = {
         "slots": {
             "placeholder": "",
             "From": "Manila",
-            "To": "Las Vegas",
+            "To": "Manila",
             "Departure": "2017-09-05",
             // "DepartureFlightId": "123",
             "FlightType": "round trip",
@@ -40,7 +40,7 @@ event = {
     "messageVersion": "1.0",
     "sessionAttributes": {
         "From": "Manila",
-        "To": "Las Vegas"
+        "To": "Manila"
     }
 };
 
@@ -75,17 +75,19 @@ function displayHandler(err, response) {
             LOG.log(` response : ${response}`);
 
         } else {
-
-
             if (response.dialogAction.message) {
                 LOG.log(` LEX Message: ${response.dialogAction.message.content} `)
                 if (response.dialogAction.responseCard) {
+                    if (!genericAttachments || genericAttachments.length < 1 || !genericAttachments[0].title) {
+                        LOG.level('WARNING').log('Warning: Response Card avilable, but no attachment, or title is found.  this will cause errors in LEX');
+                    }
                     var genericAttachments = response.dialogAction.responseCard.genericAttachments || []
                     for (y = 0; y < genericAttachments.length; y++) {
                         var genericAttachment = response.dialogAction.responseCard.genericAttachments[y];
                         LOG.log('________________________________________________');
                         LOG.log(` | ${genericAttachment.title} `)
                         LOG.log(` | ${genericAttachment.subTitle} `)
+                        LOG.log(` | ${genericAttachment.imageUrl} `)
                         var buttons = genericAttachment.buttons;
                         for (x = 0; x < buttons.length; x++) {
                             var text = buttons[x].text;
