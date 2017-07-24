@@ -20,17 +20,17 @@ module.exports = {
 function process(intentRequest, callback, outputSessionAttributes) {
     console.log('processsing slot-schedule logic');
     var slots = intentRequest.currentIntent.slots;
-    if (ASK_IF_RETURN_TRIP_NEEDED(intentRequest, callback, outputSessionAttributes)) { return true }
+    if (ASK_RETURN_TRIP_IF_NEEDED(intentRequest, callback, outputSessionAttributes)) { return true }
     if (CLARIFY_IF_THERE_ARE_INVALID_DATES(intentRequest, callback, outputSessionAttributes)) { return true }
     return false;
 }
 
 
-//just delegate to LEX
-function ASK_IF_RETURN_TRIP_NEEDED(intentRequest, callback, outputSessionAttributes) {
+function ASK_RETURN_TRIP_IF_NEEDED(intentRequest, callback, outputSessionAttributes) {
     // var bothSupplied = intentRequest.currentIntent.slots.Departure && intentRequest.currentIntent.slots.Return;
     if ((intentRequest.currentIntent.slots.FlightType == 'round trip'
         || intentRequest.currentIntent.slots.FlightType == 'yes') && !intentRequest.currentIntent.slots.Return) {
+        console.log(`...since user specified roundtrip, i need to ask a return trip.`);
         elicit('Return', `When will you return from the trip?`, intentRequest, callback, outputSessionAttributes)
         return true;
     }
@@ -40,6 +40,12 @@ function CLARIFY_IF_THERE_ARE_INVALID_DATES(intentRequest, callback, outputSessi
 
     var Departure = intentRequest.currentIntent.slots.Departure;
     var Return = intentRequest.currentIntent.slots.Return;
+
+    if(!Departure){
+        console.log(`...departure date is not given. I will let LEX ask for it.`);
+        callback(responseBuilder.delegate(outputSessionAttributes, intentRequest.currentIntent.slots));
+        return true;
+    }
 
     if (!dateHelper.isValidDate(Departure)) {
         elicit('Departure', `Sorry but your departure date is invalid, can you repeat it please?`, intentRequest, callback, outputSessionAttributes);

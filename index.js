@@ -17,14 +17,14 @@ event = {
     "currentIntent": {
         "name": "FlightReservation",
         "slots": {
-            "placeholder": "",
-            "From": "Los Ange",
-            "To": "Manila",
-            "Departure": "2017-09-05",
+            // "placeholder": "",
+            "From": "Los Angele",
+            "To": "New York",
+            // "Departure": "2017-09-05",
             // "DepartureFlightId": "123",
-            "FlightType": "round trip",
-            "Return": "2017-09-05",
-            "ReturnFlightId": "123"
+            // "FlightType": "round trip",
+            // "Return": "2017-09-05",
+            // "ReturnFlightId": "123"
         },
         "confirmationStatus": "None"
     },
@@ -39,8 +39,8 @@ event = {
     "outputDialogMode": "Text",
     "messageVersion": "1.0",
     "sessionAttributes": {
-        "From": "Manila",
-        "To": "Manila"
+        "From": "Los Angeles",
+        "To": "New York"
     }
 };
 
@@ -58,6 +58,7 @@ app.listen(3030);
 LOG.level('SYSTEM').log('Listening on port ' + 3030 + '....');
 
 function displayHandler(err, response) {
+    console.log("\n\n");
     LOG.log('------------------------------------------------------');
 
     if (response.dialogAction) {
@@ -78,10 +79,18 @@ function displayHandler(err, response) {
             if (response.dialogAction.message) {
                 LOG.log(` LEX Message: ${response.dialogAction.message.content} `)
                 if (response.dialogAction.responseCard) {
-                    if (!genericAttachments || genericAttachments.length < 1 || !genericAttachments[0].title) {
+                    var genericAttachments = response.dialogAction.responseCard.genericAttachments;
+
+                    var attachementIsNull = !genericAttachments;
+                    var attachmentHasNoItem = attachementIsNull || genericAttachments.length < 1;
+                    var cardHasTitle = attachmentHasNoItem || genericAttachments.length < 1 || !genericAttachments[0].title;
+
+                    LOG.log(`Has Title: ${cardHasTitle}; AttachmentNull: ${attachementIsNull}; No Item: ${attachmentHasNoItem}`);
+
+                    if (cardHasTitle || attachementIsNull || attachmentHasNoItem) {
                         LOG.level('WARNING').log('Warning: Response Card avilable, but no attachment, or title is found.  this will cause errors in LEX');
                     }
-                    var genericAttachments = response.dialogAction.responseCard.genericAttachments || []
+
                     for (y = 0; y < genericAttachments.length; y++) {
                         var genericAttachment = response.dialogAction.responseCard.genericAttachments[y];
                         LOG.log('________________________________________________');
@@ -109,7 +118,8 @@ function displayHandler(err, response) {
                 LOG.log(`   - ${key} : ${sessionAttributes[key]}`);
             }
             LOG.log('------------------------------------------------------');
-            // LOG.log(JSON.stringify(response));
+            LOG.log('\n\n');
+            LOG.log(JSON.stringify(response));
         }
     }
 }

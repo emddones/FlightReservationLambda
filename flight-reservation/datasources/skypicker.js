@@ -17,14 +17,6 @@ module.exports = {
         LOG.log("END");
     },
 
-    retrievePlacesMock: function (givenLocation, callback) {
-        callback(null, [
-            { id: 'LAX - Los Angeles', value: 'Los Angeles' },
-            { id: 'LX - Las Vegas', value: 'Las Vegas' },
-            { id: 'DC', value: 'DC' }
-        ]);
-    },
-
     retrieveFlights: function (params, callback) {
         LOG.log("BEGIN");
         var getUrl = { url: "https://api.skypicker.com/flights" };
@@ -37,6 +29,12 @@ module.exports = {
 
         LOG.log("END");
     },
+
+    retrievePlacesMock: function (givenLocation, callback) {
+        callback(null, placesMockData);
+    },
+
+
 
     retrieveFlightsMock: function (params, callback) {
         LOG.log("BEGIN")
@@ -492,4 +490,46 @@ var flightsMockData = {
         "AS"
     ],
     "time": 1
-}
+};
+
+var placesMockData = [
+    {
+        "zoomLevelThreshold": 7,
+        "numberOfAirports": 1,
+        "sp_score": null,
+        "value": "Los Angeles",
+        "rank": 10,
+        "parentId": "US",
+        "lat": -36.943649,
+        "lng": -72.350952,
+        "type": 2,
+        "id": "los-angeles",
+        "population": 3877129
+    },
+    {
+        "zoomLevelThreshold": 7,
+        "numberOfAirports": 1,
+        "sp_score": null,
+        "value": "Los Angeles",
+        "rank": 8,
+        "parentId": "los-angeles_cl",
+        "lat": -36.943649,
+        "lng": -72.350952,
+        "type": 0,
+        "id": "LSQ",
+        "population": null
+    },
+    {
+        "zoomLevelThreshold": 7,
+        "numberOfAirports": 1,
+        "sp_score": null,
+        "value": "Los Angeles",
+        "rank": 8,
+        "parentId": "los-angeles_us",
+        "lat": 34.0699824882,
+        "lng": -118.2235336304,
+        "type": 0,
+        "id": "LAX",
+        "population": null
+    }
+];

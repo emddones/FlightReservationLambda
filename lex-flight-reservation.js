@@ -3,7 +3,7 @@
  * 
  */
 var logic = require('./flight-reservation/lex-business-logic');
-var LIVE_DATA = true;
+var LIVE_DATA = false;
 //object called by AWS lambda
 exports.handler = (event, context, callback) => {
     try {
