@@ -20,11 +20,11 @@ event = {
             // "placeholder": "",
             "From": "Los Angele",
             "To": "New York",
-            // "Departure": "2017-09-05",
-            // "DepartureFlightId": "123",
-            // "FlightType": "round trip",
-            // "Return": "2017-09-05",
-            // "ReturnFlightId": "123"
+            "Departure": "2017-09-05",
+            "DepartureFlightId": "123",
+            "FlightType": "round trip",
+            "Return": "2017-09-05",
+            "ReturnFlightId": "123"
         },
         "confirmationStatus": "None"
     },

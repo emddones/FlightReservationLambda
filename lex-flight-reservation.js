@@ -3,7 +3,7 @@
  * 
  */
 var logic = require('./flight-reservation/lex-business-logic');
-var LIVE_DATA = false;
+var LIVE_DATA = true;
 //object called by AWS lambda
 exports.handler = (event, context, callback) => {
     try {
@@ -25,7 +25,7 @@ function loggingCallback(response, originalCallback) {
 }
 
 function dispatch(intentRequest, originalCallback) {
-
+    intentRequest.sessionAttributes = intentRequest.sessionAttributes || {}
     intentRequest.sessionAttributes.LIVE_DATA = LIVE_DATA;
     return logic.processIntent(intentRequest, originalCallback);
 

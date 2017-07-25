@@ -35,14 +35,18 @@ function processIntent(intentRequest, callback) {
             }));
             return true;
         }
-        callback(responseBuilder.delegate(outputSessionAttributes, intentRequest.currentIntent.slots));
+        callback(responseBuilder.delegate({}, intentRequest.currentIntent.slots));
         return true;
     } else {
-
-        callback(responseBuilder.close(outputSessionAttributes, 'Fulfilled', {
-            contentType: 'PlainText',
-            content: `Okay, I booked your trip from : ${slots.To}`
-        }));
+        var slots = intentRequest.currentIntent.slots;
+        callback(responseBuilder.close({},            
+            'Failed',
+            {
+                contentType: 'PlainText',
+                content: `Okay, I booked your trip from : ${slots.From} to  ${slots.To} for userID: ${intentRequest.userId}`
+            },
+            null)
+        );
     }
     return false;
 }

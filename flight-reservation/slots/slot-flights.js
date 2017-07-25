@@ -53,20 +53,12 @@ function processFlight(slotName, message, intentRequest, callback, outputSession
         // console.log(intentRequest);
 
         if (err || !card || !card.genericAttachments[0]) {
-            var From = intentRequest.currentIntent.slots.From;
-            var To = intentRequest.currentIntent.slots.To;
-            var notFoundMessage = `Sorry but i dont see any flights from ${From} to ${To}. Plesae verify where you are coming from?`;
-            intentRequest.currentIntent.slots.From = null;
-            intentRequest.currentIntent.slots.To = null;
-            intentRequest.currentIntent.slots.DepartureFlightId = null;
-            intentRequest.currentIntent.slots.ReturnFlightId = null;
-            outputSessionAttributes.From = null;
-            outputSessionAttributes.To = null;
-            elicitWithNoCard('To', notFoundMessage,
-                intentRequest, callback, outputSessionAttributes);
-
+            callback(responseBuilder.close({}, 'Failed', {
+                contentType: 'PlainText',
+                content: `Sorry but I found no flights scheduled coming from '${slots.From}' to  '${slots.To}' on the given date. Let's start over again please.`
+            }));
+            return true;
         } else {
-
             var response = responseBuilder.elicitSlot(
                 outputSessionAttributes,
                 intentRequest.currentIntent.name,
@@ -141,12 +133,27 @@ function generateCardFromData(responseData) {
         var arrivalDate = Dates.parseFromUTC(firstDeparture.dTimeUTC);
 
         var genericAttachment = {
-            "title": `Flight number: ${firstDeparture.airline}${firstDeparture.flight_no} for (${flight.price} ${responseData.currency}) duration: ${flight.fly_duration}`,
+            "title": `Price: (${flight.price} ${responseData.currency}) duration: ${flight.fly_duration}`,
             "subTitle": `Departure: ${firstDeparture.cityFrom} (${firstDeparture.flyFrom}) ${Dates.toISODate(departureDate)}`
             + ` \n Arrival: ${firstDeparture.cityTo} (${firstDeparture.flyTo}) ${Dates.toISODate(arrivalDate)}`,
-            "imageUrl": `http://pics.avs.io/350/70/${firstDeparture.airline}.png`,
+            "imageUrl": `http://pics.avs.io/200/150/${firstDeparture.airline}.png`,
             "attachmentLinkUrl": flight.deep_link,
-            buttons: [{ "text": `choose`, "value": flight.id }],
+            buttons: [{ "text":`Flight# ${firstDeparture.airline}${firstDeparture.flight_no}`, "value": flight.id }]
+            // buttons: [{
+            //     "text":
+            //     {
+            //         "type": "postback",
+            //         "title": "Choose",
+            //         "payload": `${flight.id}`
+            //     },
+            //     "value":
+            //     {
+            //         "type": "postback",
+            //         "title": "choose",
+            //         "payload": `${flight.id}`
+            //     }
+            // }]
+            ,
         }
         card.genericAttachments.push(genericAttachment);
     }

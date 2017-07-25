@@ -50,4 +50,8 @@ module.exports = {
     toISODate: function (dateToFormat) {
         return `${dateToFormat.getFullYear()}-${dateToFormat.getMonth() + 1}-${dateToFormat.getDate()}`;
     },
+
+    toTime: function (dateToFormat) {
+        return `${dateToFormat.getTime()}`;
+    }
 }
